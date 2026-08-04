@@ -1,0 +1,25 @@
+# Optional local stack. The examples run fine without it; this is for
+# readers who want to see the telemetry land somewhere real.
+#
+#   docker compose up -d
+#   OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318/v1/traces aiobs-sim run --all
+#   open http://localhost:16686        # Jaeger
+
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.62
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.111.0
+    command: ["--config=/etc/otel/config.yaml"]
+    volumes:
+      - ./config/otel-collector.yaml:/etc/otel/config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    depends_on:
+      - jaeger

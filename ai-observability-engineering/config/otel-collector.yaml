@@ -1,0 +1,62 @@
+# Minimal OpenTelemetry Collector config for running the book's examples
+# against a real pipeline instead of the in-memory exporter.
+#
+#   docker compose up -d
+#   OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318/v1/traces \
+#     aiobs-sim run --all
+#
+# Note the two pipelines. Chapter 2 argues that a sampled stream cannot be
+# a system of record for cost, so traces are sampled and the cost pipeline
+# is not.
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  batch:
+    timeout: 5s
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+  # Strip anything that looks like a payload before it leaves the network.
+  attributes/redact:
+    actions:
+      - key: gen_ai.input.messages
+        action: delete
+      - key: gen_ai.output.messages
+        action: delete
+      - key: aiobs.debug.prompt
+        action: delete
+  probabilistic_sampler/traces:
+    sampling_percentage: 10
+  filter/cost_only:
+    error_mode: ignore
+    traces:
+      span:
+        - 'attributes["aiobs.cost.usd"] == nil'
+
+exporters:
+  debug:
+    verbosity: normal
+  otlphttp/traces:
+    endpoint: http://jaeger:4318
+  # Replace with your long-term store. The point is that it is a separate
+  # exporter fed by an unsampled pipeline.
+  otlphttp/cost:
+    endpoint: http://jaeger:4318
+
+service:
+  pipelines:
+    traces/sampled:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes/redact, probabilistic_sampler/traces, batch]
+      exporters: [otlphttp/traces, debug]
+    traces/cost:
+      receivers: [otlp]
+      processors: [memory_limiter, filter/cost_only, batch]
+      exporters: [otlphttp/cost]

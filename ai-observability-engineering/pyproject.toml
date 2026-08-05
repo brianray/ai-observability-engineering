@@ -43,8 +43,7 @@ aiobs-sim = "simulator.app:main"
 Homepage = "https://github.com/ai-observability-engineering/ai-observability-engineering"
 Issues = "https://github.com/ai-observability-engineering/ai-observability-engineering/issues"
 
-[tool.setuptools]
-package-dir = { "" = "src" }
+
 
 [tool.setuptools.packages.find]
 where = ["src", "."]

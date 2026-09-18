@@ -7,6 +7,7 @@ true of its own code, that is the bug worth catching.
 
 import pytest
 
+from aiobs import MockProvider
 from aiobs.semconv import Aiobs, Eval, GenAI
 from aiobs.testing import ExampleHarness, llm_spans, spans_named
 from chapters.registry import get
@@ -64,6 +65,15 @@ def test_ch02_sampling_destroys_the_cost_total():
     payload = _run("ch02.collector_pipeline_sampling").returned
     assert payload["relative_error"] > 0.0
     assert payload["true_total_usd"] > 0
+
+
+# --- Chapter 4 -------------------------------------------------------- #
+
+def test_ch04_ttft_starts_after_the_first_content_token():
+    payload = _run("ch04.measure_ttft").returned
+    assert payload["ttft_ms"] < payload["total_ms"]
+    assert payload["tokens_per_second"] > 0
+    assert payload["output_tokens"] == MockProvider().stream_completion_tokens
 
 
 # --- Chapter 5 and 6 -------------------------------------------------- #

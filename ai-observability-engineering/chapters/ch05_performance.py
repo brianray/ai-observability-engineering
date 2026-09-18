@@ -165,3 +165,4 @@ def tokens_per_second() -> dict:
         "total_tokens": total_tokens,
         "note": "capacity scales with tokens; request rate alone will mislead you",
     }
+    

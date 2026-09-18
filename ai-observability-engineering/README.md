@@ -72,15 +72,26 @@ Chapter 01  The Observability Imperative for AI Systems   [Part I: Foundations o
   PASS  green_dashboard_wrong_answer      -               1 spans      31 tok  $ 0.000000    0.6 ms
 ...
 Pillar coverage (declared / observed on spans)
-  performance        11 / 10
+  performance        16 / 15
   roi                 8 / 9
   risk                4 / 4
   responsibility      5 / 5
 
-28/28 examples passed  |  210 spans (158 LLM)  |  5758 tokens  |  $0.235405 simulated  |  57 ms
+33/33 examples passed  |  224 spans (161 LLM)  |  6005 tokens  |  $0.235405 simulated  |  91 ms
 ```
 
-The test suite is 347 tests: 96 unit tests covering framework internals, and 251 functional tests covering every example and every chapter's claims.
+The test suite is 387 tests: 97 unit tests covering framework internals, and 290 functional tests covering every example and every chapter's claims.
+
+### Verified dependency versions
+
+These are the versions currently validated by the runnable examples and test
+suite:
+
+| Package | Version | Notes |
+|---|---|---|
+| `opentelemetry-api` | `1.44.0` | Exact runtime dependency in `pyproject.toml` |
+| `opentelemetry-sdk` | `1.44.0` | Exact runtime dependency in `pyproject.toml` |
+| `langchain` | not used | No Chapter 5 example in this repository depends on LangChain today |
 
 ---
 
@@ -591,9 +602,10 @@ src/aiobs/                   the framework
   agents.py                  MAST failure taxonomy, agent run analysis
   testing/                   THE HARNESS: assertions, fixtures, scenarios
 
-chapters/                    one module per chapter, 17 of them
+chapters/                    chapter examples; Chapter 5 also has a small `ch05/` package
   registry.py                @example decorator + coverage reporting
   ch01_foundations.py        ... through ch17_accountability.py
+  ch05/                      worker-pool and cross-service tracing examples
 
 simulator/                   the simulation app
   runner.py                  executes examples through the harness
@@ -620,7 +632,7 @@ Each chapter cites the module that implements its listings.
 | 2 | `chapters/ch02_anatomy.py` | `Layer`, `observe`, `CostLedger` |
 | 3 | `chapters/ch03_signals.py` | `Scope`, `GenAI.CONVERSATION_ID` |
 | 4 | `chapters/ch04_instrumentation.py` | `llm_span`, `Operation.EXECUTE_TOOL` |
-| 5 | `chapters/ch05_performance.py` | percentile helpers, throughput attributes |
+| 5 | `chapters/ch05_performance.py`, `chapters/ch05/` | percentiles, thread-pool context propagation, cross-service tracing |
 | 6 | `chapters/ch06_drift.py` | `drift.population_stability_index`, `drift.kolmogorov_smirnov` |
 | 7 | `chapters/ch07_cost_accounting.py` | `CostLedger`, `price_call`, `UnknownModelError` |
 | 8 | `chapters/ch08_cost_engineering.py` | routing, cache accounting |

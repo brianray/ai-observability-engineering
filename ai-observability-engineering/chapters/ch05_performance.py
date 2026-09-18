@@ -2,7 +2,16 @@
 
 from __future__ import annotations
 
+import os
 import time
+
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import (
+    BatchSpanProcessor,
+    InMemorySpanExporter,
+    SimpleSpanProcessor,
+)
 
 from aiobs import Aiobs, Layer, MockProvider, Pillar, get_tracer
 from aiobs.instrument import set_llm_attributes
@@ -10,6 +19,58 @@ from aiobs.instrument import set_llm_attributes
 from .registry import example
 
 CONTEXT = "Expedited shipping is next business day for orders placed before 2pm"
+
+
+@example(
+    chapter=5,
+    key="deployment_environment_resource",
+    title="Pin the deployment environment in the resource",
+    pillar=Pillar.PERFORMANCE,
+    layer=Layer.MODEL_AND_INFERENCE,
+    listing="5.1",
+)
+def deployment_environment_resource() -> dict:
+    """Set the deployment environment in the Resource, not on every span.
+
+    OTel's semantic convention key is ``deployment.environment.name``; the older
+    ``deployment.environment`` name was renamed in the spec. In CI we run the
+    example locally with ``DEPLOY_ENV=local`` and an in-memory exporter so we
+    assert the resource model without requiring a live collector.
+    """
+    env = os.environ.get("DEPLOY_ENV", "local")
+    resource = Resource.create({"deployment.environment.name": env})
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider(resource=resource)
+
+    if env == "local":
+        processor = BatchSpanProcessor(
+            exporter,
+            schedule_delay_millis=5000,
+            max_export_batch_size=512,
+        )
+    else:
+        processor = SimpleSpanProcessor(exporter)
+    provider.add_span_processor(processor)
+
+    tracer = provider.get_tracer(__name__)
+    with tracer.start_as_current_span("deployment_environment_fingerprint") as span:
+        span.set_attribute("deployment.environment.name", env)
+
+    provider.force_flush()
+    spans = exporter.get_finished_spans()
+    resource_attributes = dict(resource.attributes)
+    return {
+        "deployment_environment": env,
+        "resource_attribute_count": len(resource_attributes),
+        "resource_attributes": resource_attributes,
+        "processor": type(processor).__name__,
+        "batch_config": (
+            {"schedule_delay_millis": 5000, "max_export_batch_size": 512}
+            if isinstance(processor, BatchSpanProcessor)
+            else None
+        ),
+        "span_count": len(spans),
+    }
 
 
 def _percentile(values: list[float], p: float) -> float:

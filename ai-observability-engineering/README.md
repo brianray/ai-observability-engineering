@@ -82,6 +82,17 @@ Pillar coverage (declared / observed on spans)
 
 The test suite is 347 tests: 96 unit tests covering framework internals, and 251 functional tests covering every example and every chapter's claims.
 
+### Verified dependency versions
+
+These are the versions currently validated by the runnable examples and test
+suite:
+
+| Package | Version | Notes |
+|---|---|---|
+| `opentelemetry-api` | `1.44.0` | Exact runtime dependency in `pyproject.toml` |
+| `opentelemetry-sdk` | `1.44.0` | Exact runtime dependency in `pyproject.toml` |
+| `langchain` | not used | No Chapter 5 example in this repository depends on LangChain today |
+
 ---
 
 ## Architecture at a glance
@@ -591,9 +602,10 @@ src/aiobs/                   the framework
   agents.py                  MAST failure taxonomy, agent run analysis
   testing/                   THE HARNESS: assertions, fixtures, scenarios
 
-chapters/                    one module per chapter, 17 of them
+chapters/                    chapter examples; Chapter 5 also has a small `ch05/` package
   registry.py                @example decorator + coverage reporting
   ch01_foundations.py        ... through ch17_accountability.py
+  ch05/                      worker-pool and cross-service tracing examples
 
 simulator/                   the simulation app
   runner.py                  executes examples through the harness
@@ -620,7 +632,7 @@ Each chapter cites the module that implements its listings.
 | 2 | `chapters/ch02_anatomy.py` | `Layer`, `observe`, `CostLedger` |
 | 3 | `chapters/ch03_signals.py` | `Scope`, `GenAI.CONVERSATION_ID` |
 | 4 | `chapters/ch04_instrumentation.py` | `llm_span`, `Operation.EXECUTE_TOOL` |
-| 5 | `chapters/ch05_performance.py` | percentile helpers, throughput attributes |
+| 5 | `chapters/ch05_performance.py`, `chapters/ch05/` | percentiles, thread-pool context propagation, cross-service tracing |
 | 6 | `chapters/ch06_drift.py` | `drift.population_stability_index`, `drift.kolmogorov_smirnov` |
 | 7 | `chapters/ch07_cost_accounting.py` | `CostLedger`, `price_call`, `UnknownModelError` |
 | 8 | `chapters/ch08_cost_engineering.py` | routing, cache accounting |

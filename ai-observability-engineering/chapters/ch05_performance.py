@@ -9,11 +9,12 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import (
     BatchSpanProcessor,
-    InMemorySpanExporter,
     SimpleSpanProcessor,
 )
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 from aiobs import Aiobs, Layer, MockProvider, Pillar, get_tracer
+import aiobs.telemetry as telemetry
 from aiobs.instrument import set_llm_attributes
 
 from .registry import example
@@ -40,6 +41,7 @@ def deployment_environment_resource() -> dict:
     env = os.environ.get("DEPLOY_ENV", "local")
     resource = Resource.create({"deployment.environment.name": env})
     exporter = InMemorySpanExporter()
+    telemetry._MEMORY_EXPORTER = exporter
     provider = TracerProvider(resource=resource)
 
     if env == "local":
@@ -54,7 +56,8 @@ def deployment_environment_resource() -> dict:
 
     tracer = provider.get_tracer(__name__)
     with tracer.start_as_current_span("deployment_environment_fingerprint") as span:
-        span.set_attribute("deployment.environment.name", env)
+        span.set_attribute(Aiobs.PILLAR, Pillar.PERFORMANCE.value)
+        span.set_attribute(Aiobs.LAYER, Layer.MODEL_AND_INFERENCE.value)
 
     provider.force_flush()
     spans = exporter.get_finished_spans()
@@ -136,7 +139,7 @@ def latency_distribution() -> dict:
     title="Throughput measured in tokens, not requests",
     pillar=Pillar.PERFORMANCE,
     layer=Layer.MODEL_AND_INFERENCE,
-    listing="5.5",
+    listing="5.6",
 )
 def tokens_per_second() -> dict:
     tracer = get_tracer(__name__)

@@ -72,15 +72,15 @@ Chapter 01  The Observability Imperative for AI Systems   [Part I: Foundations o
   PASS  green_dashboard_wrong_answer      -               1 spans      31 tok  $ 0.000000    0.6 ms
 ...
 Pillar coverage (declared / observed on spans)
-  performance        11 / 10
+  performance        16 / 15
   roi                 8 / 9
   risk                4 / 4
   responsibility      5 / 5
 
-28/28 examples passed  |  210 spans (158 LLM)  |  5758 tokens  |  $0.235405 simulated  |  57 ms
+33/33 examples passed  |  224 spans (161 LLM)  |  6005 tokens  |  $0.235405 simulated  |  91 ms
 ```
 
-The test suite is 347 tests: 96 unit tests covering framework internals, and 251 functional tests covering every example and every chapter's claims.
+The test suite is 387 tests: 97 unit tests covering framework internals, and 290 functional tests covering every example and every chapter's claims.
 
 ### Verified dependency versions
 

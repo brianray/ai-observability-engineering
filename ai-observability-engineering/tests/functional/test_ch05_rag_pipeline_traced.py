@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import aiobs.telemetry as telemetry
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from opentelemetry.trace import SpanKind
 
+import aiobs.telemetry as telemetry
 from chapters.ch05.rag_pipeline_traced import rag_pipeline_traced
 
 

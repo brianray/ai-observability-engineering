@@ -13,8 +13,8 @@ from opentelemetry.sdk.trace.export import (
 )
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
-from aiobs import Aiobs, Layer, MockProvider, Pillar, get_tracer
 import aiobs.telemetry as telemetry
+from aiobs import Aiobs, Layer, MockProvider, Pillar, get_tracer
 from aiobs.instrument import set_llm_attributes
 
 from .registry import example

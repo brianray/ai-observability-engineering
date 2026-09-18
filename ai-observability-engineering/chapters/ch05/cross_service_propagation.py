@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
-from opentelemetry import propagate, trace
+from opentelemetry import propagate
 from opentelemetry.trace import SpanKind
 
 from aiobs import Aiobs, Layer, Pillar, get_tracer
-
 from chapters.registry import example
 
 
@@ -44,12 +43,14 @@ def cross_service_propagation() -> dict:
             span.set_attribute(Aiobs.LAYER, Layer.DATA_AND_RETRIEVAL.value)
             return {"documents": ["retrieved policy excerpt", "refund exclusion note"]}
 
-    with TestClient(app) as client:
-        with tracer.start_as_current_span("rag.retrieve.client", kind=SpanKind.CLIENT) as span:
-            span.set_attribute(Aiobs.PILLAR, Pillar.PERFORMANCE.value)
-            span.set_attribute(Aiobs.LAYER, Layer.DATA_AND_RETRIEVAL.value)
-            headers: dict[str, str] = {}
-            propagate.inject(headers)
-            response = client.get("/retrieve", headers=headers)
+    with TestClient(app) as client, tracer.start_as_current_span(
+        "rag.retrieve.client",
+        kind=SpanKind.CLIENT,
+    ) as span:
+        span.set_attribute(Aiobs.PILLAR, Pillar.PERFORMANCE.value)
+        span.set_attribute(Aiobs.LAYER, Layer.DATA_AND_RETRIEVAL.value)
+        headers: dict[str, str] = {}
+        propagate.inject(headers)
+        response = client.get("/retrieve", headers=headers)
 
     return {"headers": headers, "documents": response.json()["documents"]}

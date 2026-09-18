@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from aiobs import Layer, Pillar
-
 from chapters.registry import example
 
 from ._rag_shared import run_rag_pipeline

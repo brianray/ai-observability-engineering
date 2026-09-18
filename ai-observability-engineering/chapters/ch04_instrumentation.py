@@ -15,6 +15,17 @@ DOCS = {
 }
 
 
+class _DeterministicClock:
+    def __init__(self) -> None:
+        self._now = 0.0
+
+    def now(self) -> float:
+        return self._now
+
+    def sleep(self, seconds: float) -> None:
+        self._now += seconds
+
+
 @observe(pillar=Pillar.PERFORMANCE, layer=Layer.DATA_AND_RETRIEVAL, name="vector_search")
 def _search(query: str, k: int = 2) -> list[str]:
     ranked = sorted(DOCS.items(), key=lambda kv: -len(set(kv[1].lower().split()) & set(query.lower().split())))
@@ -66,6 +77,84 @@ def rag_pipeline_traced() -> dict:
             set_eval_attributes(span, scores, evaluator="heuristic-v1")
 
     return {"documents_retrieved": len(documents), "answer": reply.text, "scores": scores}
+
+
+@example(
+    chapter=4,
+    key="measure_ttft",
+    title="Measuring time to first token",
+    pillar=Pillar.PERFORMANCE,
+    layer=Layer.MODEL_AND_INFERENCE,
+    listing="4.5",
+)
+def measure_ttft(clock=None) -> dict:
+    """TTFT starts with the first non-empty content delta, not the role chunk."""
+    provider = MockProvider()
+    prompt = "what are the warranty terms"
+    context = DOCS["warranty"]
+    active_clock = clock or _DeterministicClock()
+    started = active_clock.now()
+    first_token_at: float | None = None
+    finished_at = started
+    response_id = ""
+    finish_reason = "stop"
+    usage = None
+    tokens: list[str] = []
+
+    with llm_span(
+        provider=provider.name,
+        model=provider.model,
+        operation=Operation.CHAT,
+        pillar=Pillar.PERFORMANCE,
+        layer=Layer.MODEL_AND_INFERENCE,
+    ) as span:
+        stream = provider.stream_chat(
+            prompt,
+            context=context,
+            stream_options={"include_usage": True},
+            clock=active_clock,
+        )
+        for chunk in stream:
+            finished_at = active_clock.now()
+            response_id = chunk.id
+            if not chunk.choices:
+                usage = chunk.usage
+                continue
+            choice = chunk.choices[0]
+            finish_reason = choice.finish_reason or finish_reason
+            content = choice.delta.content or ""
+            if not content:
+                continue
+            if first_token_at is None:
+                first_token_at = finished_at
+            tokens.append(content)
+
+        output_tokens = usage.completion_tokens if usage is not None else len(tokens)
+        input_tokens = usage.prompt_tokens if usage is not None else provider.count_tokens(prompt + context)
+        ttft_ms = round((first_token_at - started) * 1000, 3) if first_token_at is not None else 0.0
+        total_ms = round((finished_at - started) * 1000, 3)
+        generation_window = max(finished_at - (first_token_at or finished_at), 1e-6)
+        tokens_per_second = round(output_tokens / generation_window, 3)
+        span.set_attribute("aiobs.latency.ttft_ms", ttft_ms)
+        span.set_attribute("aiobs.latency.total_ms", total_ms)
+        span.set_attribute("aiobs.throughput.tokens_per_second", tokens_per_second)
+        set_llm_attributes(
+            span,
+            provider=provider.name,
+            model=provider.model,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            finish_reason=finish_reason,
+            response_id=response_id,
+        )
+
+    return {
+        "answer": "".join(tokens),
+        "ttft_ms": ttft_ms,
+        "total_ms": total_ms,
+        "tokens_per_second": tokens_per_second,
+        "output_tokens": output_tokens,
+    }
 
 
 @example(

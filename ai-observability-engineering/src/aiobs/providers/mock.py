@@ -17,9 +17,10 @@ from __future__ import annotations
 import hashlib
 import random
 import time
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Protocol
 
 from .base import ChatResponse, LLMProvider
 
@@ -46,6 +47,50 @@ class FailureMode(str, Enum):
     ERROR = "error"
 
 
+@dataclass(frozen=True)
+class MockCompletionUsage:
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+
+
+@dataclass(frozen=True)
+class MockChoiceDelta:
+    content: str | None = None
+    role: str | None = None
+
+
+@dataclass(frozen=True)
+class MockChoice:
+    delta: MockChoiceDelta
+    index: int = 0
+    finish_reason: str | None = None
+
+
+@dataclass(frozen=True)
+class MockChatChunk:
+    id: str
+    choices: list[MockChoice]
+    created: int
+    model: str
+    usage: MockCompletionUsage | None = None
+    object: str = "chat.completion.chunk"
+
+
+class StreamClock(Protocol):
+    def now(self) -> float: ...
+
+    def sleep(self, seconds: float) -> None: ...
+
+
+class _SystemClock:
+    def now(self) -> float:
+        return time.perf_counter()
+
+    def sleep(self, seconds: float) -> None:
+        time.sleep(seconds)
+
+
 @dataclass
 class MockProvider(LLMProvider):
     """Seeded, offline, scriptable stand-in for a real LLM API."""
@@ -56,6 +101,8 @@ class MockProvider(LLMProvider):
     latency_ms: float = 0.0
     input_price_per_1k: float = 0.003
     output_price_per_1k: float = 0.015
+    stream_completion_tokens: int = 4
+    stream_chunk_latency_ms: float = 20.0
     call_count: int = field(default=0, init=False)
 
     name: str = "mock"
@@ -101,6 +148,85 @@ class MockProvider(LLMProvider):
             eval_scores=scores,
             failure_mode=self.failure_mode.value,
         )
+
+    @staticmethod
+    def _split_stream_text(text: str, parts: int) -> list[str]:
+        parts = max(1, min(parts, len(text)))
+        chunks: list[str] = []
+        start = 0
+        for index in range(parts):
+            if index == parts - 1:
+                chunks.append(text[start:])
+                break
+            remaining_chars = len(text) - start
+            remaining_parts = parts - index
+            width = max(1, remaining_chars // remaining_parts)
+            end = start + width
+            chunks.append(text[start:end])
+            start = end
+        return chunks
+
+    def stream_chat(
+        self,
+        prompt: str,
+        *,
+        context: str | None = None,
+        max_tokens: int = 512,
+        stream_options: dict[str, bool] | None = None,
+        clock: StreamClock | None = None,
+        **_: Any,
+    ) -> Iterator[MockChatChunk]:
+        self.call_count += 1
+        rng = self._rng(prompt)
+
+        if self.failure_mode is FailureMode.ERROR:
+            raise RuntimeError("mock provider: upstream 503")
+
+        active_clock = clock or _SystemClock()
+        if self.latency_ms or self.failure_mode is FailureMode.SLOW:
+            active_clock.sleep(min((self.latency_ms or 250.0), 50.0) / 1000.0)
+
+        text, _scores = self._generate(prompt, context, rng)
+        input_tokens = self.count_tokens(prompt + (context or ""))
+        completion_tokens = max(1, min(max_tokens, self.stream_completion_tokens))
+        content_chunks = self._split_stream_text(text, completion_tokens)
+        response_id = f"mock-{rng.getrandbits(32):08x}"
+        created = int(rng.random() * 1_000_000)
+
+        yield MockChatChunk(
+            id=response_id,
+            choices=[MockChoice(delta=MockChoiceDelta(role="assistant", content=""))],
+            created=created,
+            model=self.model,
+        )
+
+        for index, content in enumerate(content_chunks):
+            active_clock.sleep(self.stream_chunk_latency_ms / 1000.0)
+            yield MockChatChunk(
+                id=response_id,
+                choices=[
+                    MockChoice(
+                        delta=MockChoiceDelta(content=content),
+                        finish_reason="stop" if index == len(content_chunks) - 1 else None,
+                    )
+                ],
+                created=created,
+                model=self.model,
+            )
+
+        if stream_options and stream_options.get("include_usage"):
+            active_clock.sleep(self.stream_chunk_latency_ms / 1000.0)
+            yield MockChatChunk(
+                id=response_id,
+                choices=[],
+                created=created,
+                model=self.model,
+                usage=MockCompletionUsage(
+                    prompt_tokens=input_tokens,
+                    completion_tokens=len(content_chunks),
+                    total_tokens=input_tokens + len(content_chunks),
+                ),
+            )
 
     def _generate(
         self, prompt: str, context: str | None, rng: random.Random

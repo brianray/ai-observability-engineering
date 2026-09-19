@@ -122,6 +122,21 @@ def test_ch07_rollups_sum_to_the_total():
     assert sum(payload["by_use_case"].values()) == pytest.approx(payload["total_usd"], rel=1e-6)
 
 
+def test_ch07_value_ledger_separates_assumed_value():
+    payload = _run("ch07.value_ledger").returned
+    assert payload["costs_usd"] == 80000
+    assert payload["benefits_usd"] == 114700
+    assert payload["by_confidence"]["assumed"] == 15000
+    assert round(payload["roi_ratio"], 2) == 0.43
+    assert round(payload["roi_without_assumed"], 2) == 0.25
+
+
+def test_ch07_cost_per_outcome_uses_outcome_equivalents():
+    payload = _run("ch07.cost_per_outcome_equivalents").returned
+    assert payload["outcome_equivalents"] == 12200
+    assert payload["cost_per_outcome_usd"] == pytest.approx(4.10)
+
+
 def test_ch08_routing_saves_money():
     payload = _run("ch08.model_routing_savings").returned
     assert payload["routed_usd"] < payload["baseline_usd"]

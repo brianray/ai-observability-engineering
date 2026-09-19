@@ -113,6 +113,8 @@ class Aiobs:
     COST_CURRENCY: Final[str] = "aiobs.cost.currency"
     COST_TENANT: Final[str] = "aiobs.cost.tenant"
     COST_USE_CASE: Final[str] = "aiobs.cost.use_case"
+    REQUEST_ATTEMPTS: Final[str] = "aiobs.request.attempts"
+    PURPOSE: Final[str] = "aiobs.purpose"
 
     RISK_INJECTION_DETECTED: Final[str] = "aiobs.risk.injection_detected"
     RISK_PII_DETECTED: Final[str] = "aiobs.risk.pii_detected"

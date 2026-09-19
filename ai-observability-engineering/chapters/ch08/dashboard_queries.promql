@@ -1,0 +1,8 @@
+# Chapter 8 dashboard queries
+#
+# These panels read from reconciled recording rules rather than the raw token
+# stream whenever the figure is supposed to match invoiced spend.
+
+# Table 8.4: fully loaded cost per acceptable answer (monthly reconciled row)
+# Updates once per billing cycle by design, after invoice-period reconciliation.
+aiobs_cost:fully_loaded_per_answer:monthly

@@ -2,12 +2,28 @@
 
 from __future__ import annotations
 
-from aiobs import Aiobs, CostLedger, GenAI, Layer, MockProvider, Pillar, get_tracer
+
+import json
+
+from aiobs import Aiobs, CostLedger, Layer, MockProvider, Pillar, get_tracer, GenAI
+
 from aiobs.instrument import set_cost_attributes, set_llm_attributes
 
+from .ch08.model_router import LARGE_MODEL, PRICING_PATH, cost_estimate_usd
 from .registry import example
 
 CONTEXT = "Standard shipping takes three to five business days"
+
+
+def table_8_1_rates() -> dict[str, dict[str, float]]:
+    """Model rates (USD per million tokens) sourced from chapters/ch08/pricing.json."""
+    pricing = json.loads(PRICING_PATH.read_text(encoding="utf-8"))
+    return pricing["models"]
+
+
+def chapter_opening_cost_figure_usd() -> float:
+    """Opening figure for 1,500 input and 400 output tokens on the large model."""
+    return cost_estimate_usd(LARGE_MODEL, 1500, 400)
 
 
 @example(

@@ -1,8 +1,10 @@
-# Chapter 8 dashboard queries
-#
-# These panels read from reconciled recording rules rather than the raw token
-# stream whenever the figure is supposed to match invoiced spend.
 
-# Table 8.4: fully loaded cost per acceptable answer (monthly reconciled row)
-# Updates once per billing cycle by design, after invoice-period reconciliation.
+# Listing 8.3 companion PromQL queries
+
+sum by (model) (rate(gen_ai_client_token_usage_total{token_type="input"}[5m])) / 1e6 * on(model) group_left llm_token_price_usd_per_mtok{token_type="input"}
+sum by (model) (rate(gen_ai_client_token_usage_total{token_type="cached_input"}[5m])) / 1e6 * on(model) group_left llm_token_price_usd_per_mtok{token_type="cached_input"}
+sum by (model) (rate(gen_ai_client_token_usage_total{token_type="output"}[5m])) / 1e6 * on(model) group_left llm_token_price_usd_per_mtok{token_type="output"}
+sum by (model) (rate(gen_ai_client_token_usage_total{token_type="input"}[5m])) / 1e6 * on(model) group_left llm_token_price_usd_per_mtok{token_type="input"} + sum by (model) (rate(gen_ai_client_token_usage_total{token_type="cached_input"}[5m])) / 1e6 * on(model) group_left llm_token_price_usd_per_mtok{token_type="cached_input"} + sum by (model) (rate(gen_ai_client_token_usage_total{token_type="output"}[5m])) / 1e6 * on(model) group_left llm_token_price_usd_per_mtok{token_type="output"}
+
 aiobs_cost:fully_loaded_per_answer:monthly
+

@@ -1,10 +1,28 @@
-"""Additional Chapter 8 examples and artifacts.
+"""Chapter 8 companion files."""
 
-``chapters.registry.discover()`` imports top-level ``chapters.chNN`` names.
-Import the leaf modules here so loading ``chapters.ch08`` registers the
-subpackage examples without changing the broader discovery behavior.
-"""
-
+from .model_router import (
+    COMPLEXITY_TOKEN_THRESHOLD,
+    LARGE_MODEL,
+    SMALL_MODEL,
+    RoutingDecision,
+    cost_estimate_usd,
+    count_tokens,
+    route_model,
+)
+from .token_budget import BudgetedContext, fit_context_to_budget, summarize_history
 from .fully_loaded_cost import fully_loaded_cost_per_acceptable_answer
 
-__all__ = ["fully_loaded_cost_per_acceptable_answer"]
+__all__ = [
+    "COMPLEXITY_TOKEN_THRESHOLD",
+    "LARGE_MODEL",
+    "SMALL_MODEL",
+    "BudgetedContext",
+    "RoutingDecision",
+    "cost_estimate_usd",
+    "count_tokens",
+    "fit_context_to_budget",
+    "route_model",
+    "summarize_history",
+  "fully_loaded_cost_per_acceptable_answer"
+]
+

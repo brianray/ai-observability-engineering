@@ -3,6 +3,7 @@
 import pytest
 
 from aiobs.cost import CostLedger, UnknownModelError, cost_per_outcome, price_call, roi
+from chapters.ch08.fully_loaded_cost import fully_loaded_cost_per_acceptable_answer
 
 
 def test_price_call_is_linear_in_tokens():
@@ -73,3 +74,20 @@ def test_roi_rejects_non_positive_cost_basis(bad):
 def test_cost_per_outcome_rejects_zero_outcomes():
     with pytest.raises(ValueError):
         cost_per_outcome(CostLedger(), 0)
+
+
+def test_fully_loaded_cost_per_acceptable_answer_uses_seeded_ledger():
+    payload = fully_loaded_cost_per_acceptable_answer("2025-06")
+
+    assert payload["model_spend_usd"] == 300.0
+    assert payload["provisioned_capacity_usd"] == 150.0
+    assert payload["judge_guardrail_spend_usd"] == 40.0
+    assert payload["storage_usd"] == 10.0
+    assert payload["review_labor_usd"] == 400.0
+    assert payload["total_cost_usd"] == 900.0
+    assert payload["fully_loaded_cost_per_acceptable_answer_usd"] == 9.0
+
+
+def test_fully_loaded_cost_per_acceptable_answer_rejects_zero_passing_answers():
+    with pytest.raises(ValueError, match="zero eval-passing answers"):
+        fully_loaded_cost_per_acceptable_answer("2025-07")

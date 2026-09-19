@@ -101,6 +101,7 @@ class MockProvider(LLMProvider):
     latency_ms: float = 0.0
     input_price_per_1k: float = 0.003
     output_price_per_1k: float = 0.015
+    retry_fraction: float = 0.0
     stream_completion_tokens: int = 4
     stream_chunk_latency_ms: float = 20.0
     call_count: int = field(default=0, init=False)
@@ -115,6 +116,13 @@ class MockProvider(LLMProvider):
     def count_tokens(text: str) -> int:
         """Deterministic stand-in for a real tokenizer: ~4 chars per token."""
         return max(1, (len(text) + 3) // 4)
+
+    def _should_retry(self, prompt: str) -> bool:
+        if self.retry_fraction <= 0.0:
+            return False
+        if self.retry_fraction >= 1.0:
+            return True
+        return self._rng(prompt).random() < self.retry_fraction
 
     def chat(
         self,
@@ -134,8 +142,11 @@ class MockProvider(LLMProvider):
             time.sleep(min((self.latency_ms or 250.0), 50.0) / 1000.0)
 
         text, scores = self._generate(prompt, context, rng)
-        input_tokens = self.count_tokens(prompt + (context or ""))
-        output_tokens = min(max_tokens, self.count_tokens(text))
+        attempts = 2 if self._should_retry(prompt) else 1
+        single_attempt_input_tokens = self.count_tokens(prompt + (context or ""))
+        single_attempt_output_tokens = min(max_tokens, self.count_tokens(text))
+        input_tokens = single_attempt_input_tokens * attempts
+        output_tokens = single_attempt_output_tokens * attempts
 
         return ChatResponse(
             text=text,
@@ -143,6 +154,8 @@ class MockProvider(LLMProvider):
             provider=self.name,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
+            attempts=attempts,
+            attempt_models=tuple(self.model for _ in range(attempts)),
             finish_reason="length" if output_tokens >= max_tokens else "stop",
             response_id=f"mock-{rng.getrandbits(32):08x}",
             eval_scores=scores,

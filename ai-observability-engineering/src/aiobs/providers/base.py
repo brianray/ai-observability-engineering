@@ -18,6 +18,8 @@ class ChatResponse:
     provider: str
     input_tokens: int
     output_tokens: int
+    attempts: int = 1
+    attempt_models: tuple[str, ...] = field(default_factory=tuple)
     finish_reason: str = "stop"
     response_id: str = ""
     eval_scores: dict[str, float] = field(default_factory=dict)

@@ -34,3 +34,30 @@ def test_stream_chat_emits_role_only_chunk_before_content_and_usage_only_chunk_l
     assert final_chunk.choices == []
     assert final_chunk.usage is not None
     assert final_chunk.usage.completion_tokens == provider.stream_completion_tokens
+
+
+def test_chat_without_retry_reports_single_attempt_metadata():
+    reply = MockProvider(retry_fraction=0.0).chat(
+        "what are the warranty terms",
+        context="Hardware carries a twelve month limited warranty from delivery",
+    )
+
+    assert reply.attempts == 1
+    assert reply.attempt_models == (reply.model,)
+
+
+def test_chat_with_retry_reports_two_attempts_metadata_deterministically():
+    reply = MockProvider(retry_fraction=1.0).chat(
+        "what are the warranty terms",
+        context="Hardware carries a twelve month limited warranty from delivery",
+    )
+
+    assert reply.attempts == 2
+    assert reply.attempt_models == (reply.model, reply.model)
+
+    baseline = MockProvider(retry_fraction=0.0).chat(
+        "what are the warranty terms",
+        context="Hardware carries a twelve month limited warranty from delivery",
+    )
+    assert reply.input_tokens == baseline.input_tokens * 2
+    assert reply.output_tokens == baseline.output_tokens * 2

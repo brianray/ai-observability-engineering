@@ -143,7 +143,7 @@ def discover() -> None:
 
 
 def all_examples(auto_discover: bool = True) -> list[ExampleSpec]:
-    if auto_discover and not _EXAMPLES:
+    if auto_discover:
         discover()
     return sorted(_EXAMPLES.values(), key=lambda s: (s.chapter, s.key))
 

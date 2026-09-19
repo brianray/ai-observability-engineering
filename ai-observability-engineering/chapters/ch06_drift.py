@@ -21,7 +21,9 @@ from .registry import example
 def output_drift_psi() -> dict:
     """The same detector run against a stable window and a shifted one.
 
-    Neither estimator says the system is broken. Both say the
+    PSI bins the outputs, while the KS path now delegates the statistic to
+    SciPy's two-sample implementation. Neither estimator says the system
+    is broken. Both say the
     distribution moved, which is the only thing a drift signal can
     honestly tell you.
     """

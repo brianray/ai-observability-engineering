@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from aiobs import Aiobs, CostLedger, Layer, MockProvider, Pillar, get_tracer
+from aiobs import Aiobs, CostLedger, GenAI, Layer, MockProvider, Pillar, get_tracer
 from aiobs.instrument import set_cost_attributes, set_llm_attributes
 
 from .registry import example
@@ -120,4 +120,64 @@ def cache_hit_accounting() -> dict:
         "cache_hits": hits,
         "billed_calls": len(ledger.records),
         "total_usd": ledger.total_usd,
+    }
+
+
+@example(
+    chapter=8,
+    key="retry_attempt_accounting",
+    title="A silent retry still doubles billable work",
+    pillar=Pillar.ROI,
+    layer=Layer.APPLICATION_AND_ORCHESTRATION,
+)
+def retry_attempt_accounting() -> dict:
+    """Retries are cost events even when the user only sees one answer."""
+    tracer = get_tracer(__name__)
+    prompt = "What is the shipping policy?"
+    providers = {
+        "no_retry": MockProvider(retry_fraction=0.0),
+        "one_retry": MockProvider(retry_fraction=1.0),
+    }
+    ledger = CostLedger()
+
+    def _record(label: str, provider: MockProvider) -> dict:
+        with tracer.start_as_current_span(label) as span:
+            span.set_attribute(Aiobs.LAYER, Layer.APPLICATION_AND_ORCHESTRATION.value)
+            reply = provider.chat(prompt, context=CONTEXT)
+            record = ledger.record(reply.model, reply.input_tokens, reply.output_tokens, tenant="acme")
+            set_llm_attributes(
+                span,
+                provider=provider.name,
+                model=reply.model,
+                input_tokens=reply.input_tokens,
+                output_tokens=reply.output_tokens,
+                finish_reason=reply.finish_reason,
+                response_id=reply.response_id,
+            )
+            set_cost_attributes(span, record.usd, tenant="acme", use_case="support")
+            span.set_attribute(Aiobs.REQUEST_ATTEMPTS, reply.attempts)
+            for index, attempt_model in enumerate(reply.attempt_models, start=1):
+                with tracer.start_as_current_span(f"{label}.attempt_{index}") as attempt:
+                    attempt.set_attribute(GenAI.REQUEST_MODEL, attempt_model)
+            return {
+                "attempts": reply.attempts,
+                "attempt_models": list(reply.attempt_models),
+                "input_tokens": reply.input_tokens,
+                "output_tokens": reply.output_tokens,
+                "cost_usd": record.usd,
+            }
+
+    with tracer.start_as_current_span("retry_accounting") as root:
+        root.set_attribute(Aiobs.PILLAR, Pillar.ROI.value)
+        root.set_attribute(Aiobs.LAYER, Layer.APPLICATION_AND_ORCHESTRATION.value)
+        without_retry = _record("no_retry", providers["no_retry"])
+        with_retry = _record("one_retry", providers["one_retry"])
+
+    return {
+        "without_retry": without_retry,
+        "with_retry": with_retry,
+        "retry_overhead_usd": round(
+            with_retry["cost_usd"] - without_retry["cost_usd"],
+            6,
+        ),
     }

@@ -149,6 +149,40 @@ def test_ch08_cache_hits_are_free_but_still_traced():
     assert payload["billed_calls"] < payload["requests"]
 
 
+def test_ch08_fully_loaded_cost_uses_the_seeded_reconciled_window():
+    payload = _run("ch08.fully_loaded_cost_per_acceptable_answer").returned
+    assert payload["window"] == "2025-06"
+    assert payload["passing_answers"] == 100
+    assert payload["fully_loaded_cost_per_acceptable_answer_usd"] == 9.0
+
+
+def test_ch08_retry_accounting_records_attempts_and_attempt_models():
+    result = _run("ch08.retry_attempt_accounting")
+    payload = result.returned
+
+    assert payload["without_retry"]["attempts"] == 1
+    assert payload["with_retry"]["attempts"] == 2
+    assert payload["with_retry"]["cost_usd"] > payload["without_retry"]["cost_usd"]
+
+    root_spans = {
+        span.name: dict(span.attributes or {})
+        for span in result.spans
+        if span.name in {"no_retry", "one_retry"}
+    }
+    assert root_spans["no_retry"][Aiobs.REQUEST_ATTEMPTS] == 1
+    assert root_spans["one_retry"][Aiobs.REQUEST_ATTEMPTS] == 2
+
+    attempt_models = {
+        span.name: dict(span.attributes or {})[GenAI.REQUEST_MODEL]
+        for span in result.spans
+        if span.name.startswith("one_retry.attempt_")
+    }
+    assert attempt_models == {
+        "one_retry.attempt_1": "mock-sonnet-1",
+        "one_retry.attempt_2": "mock-sonnet-1",
+    }
+
+
 def test_ch09_roi_chain_is_explicit():
     payload = _run("ch09.cost_per_resolution").returned
     assert payload["cost_per_resolution_usd"] > 0

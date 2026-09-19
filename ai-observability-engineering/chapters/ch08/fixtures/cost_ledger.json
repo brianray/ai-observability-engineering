@@ -1,0 +1,42 @@
+{
+  "windows": {
+    "2025-06": {
+      "model_spend_rows": [
+        { "model": "mock-haiku-1", "usd": 80.0 },
+        { "model": "mock-sonnet-1", "usd": 120.0 },
+        { "model": "mock-opus-1", "usd": 100.0 }
+      ],
+      "provisioned_capacity_rows": [
+        { "kind": "reserved_capacity", "usd": 150.0 }
+      ],
+      "purpose_spend_rows": [
+        { "purpose": "generation", "usd": 40.0 },
+        { "purpose": "judge", "usd": 25.0 },
+        { "purpose": "guardrail", "usd": 15.0 }
+      ],
+      "storage_cost_rows": [
+        { "kind": "trace_archive", "usd": 10.0 }
+      ],
+      "review_hours": 8.0,
+      "loaded_rate_usd_per_hour": 50.0,
+      "passing_answers": 100
+    },
+    "2025-07": {
+      "model_spend_rows": [
+        { "model": "mock-sonnet-1", "usd": 20.0 }
+      ],
+      "provisioned_capacity_rows": [
+        { "kind": "reserved_capacity", "usd": 10.0 }
+      ],
+      "purpose_spend_rows": [
+        { "purpose": "judge", "usd": 4.0 }
+      ],
+      "storage_cost_rows": [
+        { "kind": "trace_archive", "usd": 2.0 }
+      ],
+      "review_hours": 1.0,
+      "loaded_rate_usd_per_hour": 50.0,
+      "passing_answers": 0
+    }
+  }
+}

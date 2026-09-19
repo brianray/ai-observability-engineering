@@ -33,6 +33,8 @@ def test_eval_attributes_are_not_in_the_standard_namespace():
 def test_aiobs_attributes_are_custom():
     assert is_custom(Aiobs.COST_USD)
     assert not is_genai(Aiobs.COST_USD)
+    assert is_custom(Aiobs.REQUEST_ATTEMPTS)
+    assert is_custom(Aiobs.PURPOSE)
 
 
 @pytest.mark.parametrize(
@@ -43,6 +45,8 @@ def test_aiobs_attributes_are_custom():
         ("service.name", "standard"),
         ("eval.groundedness_score", "custom"),
         ("aiobs.cost.usd", "custom"),
+        ("aiobs.request.attempts", "custom"),
+        ("aiobs.purpose", "custom"),
         ("llm.model", "unknown"),
         ("my_random_attribute", "unknown"),
     ],

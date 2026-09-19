@@ -636,7 +636,7 @@ Each chapter cites the module that implements its listings.
 | 5 | `chapters/ch05_performance.py`, `chapters/ch05/` | percentiles, thread-pool context propagation, cross-service tracing |
 | 6 | `chapters/ch06_drift.py`, `chapters/ch06/` | `drift.population_stability_index`, `drift.kolmogorov_smirnov`, `drift.embedding_drift_score`, `drift.top_drifting_items`, tiered alerting |
 | 7 | `chapters/ch07_cost_accounting.py` | `CostLedger`, `price_call`, `UnknownModelError` |
-| 8 | `chapters/ch08_cost_engineering.py` | routing, cache accounting |
+| 8 | `chapters/ch08_cost_engineering.py`, `chapters/ch08/` | routing, cache accounting, fully loaded cost, and the monthly panel query in `chapters/ch08/dashboard_queries.promql` (updates once per invoice cycle by design) |
 | 9 | `chapters/ch09_roi.py` | `roi`, `cost_per_outcome` |
 | 10 | `chapters/ch10_llm_security.py` | `risk.scan`, `risk.detect_system_prompt_leak`, `OwaspLLM` |
 | 11 | `chapters/ch11_compliance.py` | NIST AI RMF / EU AI Act / ISO 42001 crosswalk |

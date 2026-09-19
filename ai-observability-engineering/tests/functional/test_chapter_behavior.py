@@ -90,6 +90,13 @@ def test_ch06_drift_detectors_agree_on_a_real_shift():
     assert payload["results"]["psi"]["stable"]["verdict"] == "stable"
 
 
+def test_ch06_embedding_drift_ranks_the_furthest_items_first():
+    payload = _run("ch06.embedding_drift_neighbors").returned
+    distances = [distance for _, distance in payload["top_drifting_items"]]
+    assert payload["embedding_drift_score"] > 0.0
+    assert distances == sorted(distances, reverse=True)
+
+
 def test_ch06_retrieval_incident_moves_grounding_not_latency():
     """Chapter 1's case study: the failure is invisible to APM."""
     payload = _run("ch06.retrieval_drift_incident").returned

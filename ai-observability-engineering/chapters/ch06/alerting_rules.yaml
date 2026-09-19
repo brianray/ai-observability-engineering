@@ -1,0 +1,45 @@
+tiers:
+  - name: informational
+    condition:
+      ks_p_threshold: 0.05
+      psi_threshold: 0.10
+      embedding_drift_threshold: 0.10
+      description: >
+        Any single input feature drifted (KS p below 0.05 or PSI above 0.10),
+        or embedding drift score above 0.10.
+    persistence_required: none
+    action: Log to the drift dashboard; no notification
+    human_involvement: None; reviewed at the weekly ops review
+  - name: warning
+    condition:
+      psi_threshold: 0.25
+      embedding_drift_threshold: 0.15
+      embedding_drift_consecutive_windows: 2
+      description: >
+        Embedding drift score above 0.15 for two consecutive daily windows,
+        or PSI above 0.25 on any monitored feature.
+    persistence_required: two_windows
+    action: Open a ticket to the model owner with the top drifting items attached (Listing 6.3)
+    human_involvement: Model owner reviews within two business days
+  - name: critical
+    condition:
+      requires_warning_condition: true
+      eval_regression: >
+        Groundedness below its Chapter 4 SLO floor or hallucination rate above
+        its SLO ceiling over the same window.
+      description: >
+        Warning condition and a matching eval regression: groundedness or
+        hallucination rate outside its SLO floor from Chapter 4 over the same window.
+    persistence_required: two_windows
+    action: Page the on-call model owner; freeze scheduled baseline refresh; open incident
+    human_involvement: >
+      On-call reviews immediately; decides whether to trigger the retraining or
+      reindexing pipeline
+  - name: retraining_trigger
+    condition:
+      requires_critical_condition: true
+      human_confirmation_required: true
+      description: Critical condition confirmed by the on-call reviewer.
+    persistence_required: human_confirmation
+    action: Run the retraining or reindexing pipeline against the flagged window; hold deployment for eval
+    human_involvement: Reviewer approves the candidate before it reaches production (Chapter 14)

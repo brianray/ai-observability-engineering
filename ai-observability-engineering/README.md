@@ -602,10 +602,11 @@ src/aiobs/                   the framework
   agents.py                  MAST failure taxonomy, agent run analysis
   testing/                   THE HARNESS: assertions, fixtures, scenarios
 
-chapters/                    chapter examples; Chapter 5 also has a small `ch05/` package
+chapters/                    chapter examples; Chapters 5 and 6 also have small `ch05/` and `ch06/` packages
   registry.py                @example decorator + coverage reporting
   ch01_foundations.py        ... through ch17_accountability.py
   ch05/                      worker-pool and cross-service tracing examples
+  ch06/                      embedding-drift and alerting-tier examples
 
 simulator/                   the simulation app
   runner.py                  executes examples through the harness
@@ -633,7 +634,7 @@ Each chapter cites the module that implements its listings.
 | 3 | `chapters/ch03_signals.py` | `Scope`, `GenAI.CONVERSATION_ID` |
 | 4 | `chapters/ch04_instrumentation.py` | `llm_span`, `Operation.EXECUTE_TOOL` |
 | 5 | `chapters/ch05_performance.py`, `chapters/ch05/` | percentiles, thread-pool context propagation, cross-service tracing |
-| 6 | `chapters/ch06_drift.py` | `drift.population_stability_index`, `drift.kolmogorov_smirnov` |
+| 6 | `chapters/ch06_drift.py`, `chapters/ch06/` | `drift.population_stability_index`, `drift.kolmogorov_smirnov`, `drift.embedding_drift_score`, `drift.top_drifting_items`, tiered alerting |
 | 7 | `chapters/ch07_cost_accounting.py` | `CostLedger`, `price_call`, `UnknownModelError` |
 | 8 | `chapters/ch08_cost_engineering.py` | routing, cache accounting |
 | 9 | `chapters/ch09_roi.py` | `roi`, `cost_per_outcome` |

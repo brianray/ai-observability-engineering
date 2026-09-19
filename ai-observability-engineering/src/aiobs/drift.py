@@ -1,15 +1,13 @@
 """Drift detection (Chapter 6).
 
-Two estimators, both dependency-free, both on the same interface so a
-chapter example can swap one for the other and show the difference:
+These detectors answer a narrow operational question: did the current
+window move relative to the reference one? PSI does that for binned
+distributions, KS does it for continuous distributions, and embedding
+drift does it by asking whether each current vector still has a close
+nearest-neighbor match in the reference set.
 
-* Population Stability Index, the workhorse for binned distributions.
-* Two-sample Kolmogorov-Smirnov, for continuous distributions where you
-  do not want to pick bins.
-
-Neither tells you a system is broken. They tell you the input or output
-distribution has moved relative to a reference window, which is the
-question a drift alert is actually answering.
+None of them prove a system is broken. They quantify movement so the
+rest of the monitoring stack can decide what that movement means.
 """
 
 from __future__ import annotations
@@ -18,6 +16,9 @@ import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
+
+from scipy.stats import ks_2samp  # type: ignore[import-untyped]
+from sklearn.neighbors import NearestNeighbors  # type: ignore[import-untyped]
 
 Verdict = Literal["stable", "moderate", "significant"]
 
@@ -42,6 +43,40 @@ class DriftResult:
 def _validate(reference: Sequence[float], current: Sequence[float]) -> None:
     if len(reference) < 2 or len(current) < 2:
         raise ValueError("both windows need at least two observations")
+
+
+def _embedding_windows(
+    reference: Sequence[Sequence[float]],
+    current: Sequence[Sequence[float]],
+) -> tuple[list[list[float]], list[list[float]]]:
+    if not reference or not current:
+        raise ValueError("both embedding windows need at least one vector")
+
+    ref_vectors = [list(vector) for vector in reference]
+    cur_vectors = [list(vector) for vector in current]
+    width = len(ref_vectors[0])
+    if width == 0:
+        raise ValueError("embedding vectors must not be empty")
+
+    for vectors in (ref_vectors, cur_vectors):
+        if any(len(vector) != width for vector in vectors):
+            raise ValueError("embedding vectors must all share the same dimensionality")
+
+    return ref_vectors, cur_vectors
+
+
+def _nearest_neighbor_distances(
+    reference: Sequence[Sequence[float]],
+    current: Sequence[Sequence[float]],
+) -> list[float]:
+    ref_vectors, cur_vectors = _embedding_windows(reference, current)
+    neighbors = NearestNeighbors(metric="cosine", n_neighbors=1)
+    neighbors.fit(ref_vectors)
+    distances, _ = neighbors.kneighbors(cur_vectors)
+    return [
+        0.0 if math.isclose(float(distance[0]), 0.0, abs_tol=1e-12) else float(distance[0])
+        for distance in distances
+    ]
 
 
 def population_stability_index(
@@ -96,33 +131,59 @@ def kolmogorov_smirnov(
     alpha: float = 0.05,
 ) -> DriftResult:
     _validate(reference, current)
-    ref = sorted(reference)
-    cur = sorted(current)
-    n, m = len(ref), len(cur)
+    result = ks_2samp(reference, current)
+    statistic = round(float(result.statistic), 6)
 
-    merged = sorted(set(ref) | set(cur))
-
-    def ecdf(sample: list[float], x: float) -> float:
-        lo, hi = 0, len(sample)
-        while lo < hi:
-            mid = (lo + hi) // 2
-            if sample[mid] <= x:
-                lo = mid + 1
-            else:
-                hi = mid
-        return lo / len(sample)
-
-    statistic = max(abs(ecdf(ref, x) - ecdf(cur, x)) for x in merged)
-    critical = math.sqrt(-0.5 * math.log(alpha / 2)) * math.sqrt((n + m) / (n * m))
-
-    if statistic < critical:
+    if result.pvalue >= alpha:
         verdict: Verdict = "stable"
-    elif statistic < critical * 1.5:
+    elif result.pvalue >= alpha / 10:
         verdict = "moderate"
     else:
         verdict = "significant"
 
-    return DriftResult("ks", round(statistic, 6), verdict, n, m)
+    return DriftResult("ks", statistic, verdict, len(reference), len(current))
+
+
+def embedding_drift_score(
+    reference: Sequence[Sequence[float]],
+    current: Sequence[Sequence[float]],
+) -> float:
+    """Aggregate per-item nearest-neighbor drift for embedding windows.
+
+    Chapter 6 treats embedding drift as a retrieval-style question:
+    does each current item still have a close analogue in the reference
+    set? Using the nearest neighbor preserves that per-item perspective.
+    Averaging every pairwise similarity would dilute the signal and turn
+    a local mismatch into a global blur.
+    """
+
+    distances = _nearest_neighbor_distances(reference, current)
+    score = sum(distances) / len(distances)
+    return 0.0 if math.isclose(score, 0.0, abs_tol=1e-12) else round(score, 6)
+
+
+def top_drifting_items(
+    reference: Sequence[Sequence[float]],
+    current: Sequence[Sequence[float]],
+    k: int = 5,
+) -> list[tuple[int, float]]:
+    """Return the current items whose nearest-neighbor match degraded most.
+
+    A single score is useful for alerting, but incident response needs to
+    know which specific items moved furthest from the reference window so
+    an owner can inspect them directly.
+    """
+
+    if k <= 0:
+        return []
+
+    distances = _nearest_neighbor_distances(reference, current)
+    ranked = sorted(
+        enumerate(distances),
+        key=lambda item: item[1],
+        reverse=True,
+    )
+    return [(index, round(distance, 6)) for index, distance in ranked[:k]]
 
 
 DETECTORS = {

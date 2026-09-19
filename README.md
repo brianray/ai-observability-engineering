@@ -623,7 +623,7 @@ Each chapter cites the module that implements its listings.
 | 3 | `chapters/ch03_signals.py` | `Scope`, `GenAI.CONVERSATION_ID` |
 | 4 | `chapters/ch04_instrumentation.py` | `llm_span`, `Operation.EXECUTE_TOOL` |
 | 5 | `chapters/ch05_performance.py` | percentile helpers, throughput attributes |
-| 6 | `chapters/ch06_drift.py` | `drift.population_stability_index`, `drift.kolmogorov_smirnov` |
+| 6 | `chapters/ch06_drift.py`, `chapters/ch06/` | `drift.population_stability_index`, `drift.kolmogorov_smirnov`, `drift.embedding_drift_score`, `drift.top_drifting_items`, tiered alerting |
 | 7 | `chapters/ch07_cost_accounting.py` | `CostLedger`, `price_call`, `UnknownModelError` |
 | 8 | `chapters/ch08_cost_engineering.py` | routing, cache accounting |
 | 9 | `chapters/ch09_roi.py` | `roi`, `cost_per_outcome` |

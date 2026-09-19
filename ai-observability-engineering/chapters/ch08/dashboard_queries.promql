@@ -1,0 +1,6 @@
+# Listing 8.3 companion PromQL queries
+
+sum by (model) (rate(gen_ai_client_token_usage_total{token_type="input"}[5m])) / 1e6 * on(model) group_left llm_token_price_usd_per_mtok{token_type="input"}
+sum by (model) (rate(gen_ai_client_token_usage_total{token_type="cached_input"}[5m])) / 1e6 * on(model) group_left llm_token_price_usd_per_mtok{token_type="cached_input"}
+sum by (model) (rate(gen_ai_client_token_usage_total{token_type="output"}[5m])) / 1e6 * on(model) group_left llm_token_price_usd_per_mtok{token_type="output"}
+sum by (model) (rate(gen_ai_client_token_usage_total{token_type="input"}[5m])) / 1e6 * on(model) group_left llm_token_price_usd_per_mtok{token_type="input"} + sum by (model) (rate(gen_ai_client_token_usage_total{token_type="cached_input"}[5m])) / 1e6 * on(model) group_left llm_token_price_usd_per_mtok{token_type="cached_input"} + sum by (model) (rate(gen_ai_client_token_usage_total{token_type="output"}[5m])) / 1e6 * on(model) group_left llm_token_price_usd_per_mtok{token_type="output"}

@@ -1,0 +1,48 @@
+groups:
+  - name: chapter_8_pricing
+    rules:
+      - record: llm_token_price_usd_per_mtok
+        expr: vector(0.8)
+        labels:
+          model: claude-haiku-4-5
+          token_type: input
+      - record: llm_token_price_usd_per_mtok
+        expr: vector(0.08)
+        labels:
+          model: claude-haiku-4-5
+          token_type: cached_input
+      - record: llm_token_price_usd_per_mtok
+        expr: vector(4.0)
+        labels:
+          model: claude-haiku-4-5
+          token_type: output
+      - record: llm_token_price_usd_per_mtok
+        expr: vector(3.0)
+        labels:
+          model: claude-sonnet-4-5
+          token_type: input
+      - record: llm_token_price_usd_per_mtok
+        expr: vector(0.3)
+        labels:
+          model: claude-sonnet-4-5
+          token_type: cached_input
+      - record: llm_token_price_usd_per_mtok
+        expr: vector(15.0)
+        labels:
+          model: claude-sonnet-4-5
+          token_type: output
+      - record: llm_token_price_usd_per_mtok
+        expr: vector(15.0)
+        labels:
+          model: claude-opus-4-1
+          token_type: input
+      - record: llm_token_price_usd_per_mtok
+        expr: vector(1.5)
+        labels:
+          model: claude-opus-4-1
+          token_type: cached_input
+      - record: llm_token_price_usd_per_mtok
+        expr: vector(75.0)
+        labels:
+          model: claude-opus-4-1
+          token_type: output

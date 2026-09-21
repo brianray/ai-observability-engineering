@@ -73,3 +73,35 @@ def test_dashboard_queries_parse_with_promtool():
             )
         finally:
             Path(tmp_path).unlink(missing_ok=True)
+
+
+def test_rules_file_is_exactly_what_the_generator_renders():
+    """The checked-in YAML must be the generator's output, byte for byte.
+
+    The prior failure mode was a hand-maintained rules file: pricing.json
+    was corrected and the YAML kept the old numbers, so every dashboard
+    panel priced traffic off a stale table without anything going red.
+    """
+    from chapters.ch08.pricing_rules import render_rules
+
+    assert RULES_PATH.read_text(encoding="utf-8") == render_rules()
+
+
+def test_every_priced_model_has_all_three_price_types():
+    pricing = json.loads(PRICING_PATH.read_text(encoding="utf-8"))["models"]
+    rules = yaml.safe_load(RULES_PATH.read_text(encoding="utf-8"))["groups"][0]["rules"]
+    pairs = {(r["labels"]["model"], r["labels"]["price_type"]) for r in rules}
+
+    for model in pricing:
+        for price_type in ("input", "cached_input", "output"):
+            assert (model, price_type) in pairs
+
+
+def test_pricing_json_declares_when_it_was_retrieved():
+    pricing = json.loads(PRICING_PATH.read_text(encoding="utf-8"))
+    assert pricing["retrieved_on"]
+    assert pricing["source"].startswith("http")
+    for rates in pricing["models"].values():
+        assert set(rates) == {"input_per_mtok", "cached_input_per_mtok", "output_per_mtok"}
+        # A cache hit is cheaper than a fresh read on every current model.
+        assert rates["cached_input_per_mtok"] < rates["input_per_mtok"]

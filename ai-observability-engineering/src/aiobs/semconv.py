@@ -120,6 +120,38 @@ class Aiobs:
     RISK_PII_DETECTED: Final[str] = "aiobs.risk.pii_detected"
     RISK_OWASP_ID: Final[str] = "aiobs.risk.owasp_id"
 
+    #: Chapter 10. Set on every guarded call, including the allow path:
+    #: a guardrail that only records its blocks cannot be audited for
+    #: false negatives, because the denominator is missing.
+    GUARDRAIL_INPUT_ACTION: Final[str] = "aiobs.guardrail.input.action"
+    GUARDRAIL_OUTPUT_ACTION: Final[str] = "aiobs.guardrail.output.action"
+    GUARDRAIL_SCORE: Final[str] = "aiobs.guardrail.score"
+
+    #: Chapter 11. Compliance tagging.
+    COMPLIANCE_SYSTEM_ID: Final[str] = "aiobs.compliance.system_id"
+    COMPLIANCE_RISK_CATEGORY: Final[str] = "aiobs.compliance.risk_category"
+    COMPLIANCE_FRAMEWORKS: Final[str] = "aiobs.compliance.frameworks"
+    COMPLIANCE_CONTROLS: Final[str] = "aiobs.compliance.controls"
+    COMPLIANCE_LAWFUL_BASIS: Final[str] = "aiobs.compliance.lawful_basis"
+    COMPLIANCE_DPIA_REFERENCE: Final[str] = "aiobs.compliance.dpia_reference"
+    RETENTION_CLASS: Final[str] = "aiobs.retention.class"
+
+    #: Chapter 14. Human-in-the-loop routing.
+    #:
+    #: Listing 14.1 in the manuscript names these ``hitl.*``. A bare
+    #: ``hitl.`` prefix is not a declared namespace in this repository
+    #: (see CUSTOM_PREFIXES) and ``test_semconv_conformance.py`` rejects
+    #: it, so the book's own rule applies: book-specific attributes live
+    #: under ``aiobs.``. The manuscript listing needs the same prefix.
+    HITL_ROUTED: Final[str] = "aiobs.hitl.routed"
+    HITL_REASON: Final[str] = "aiobs.hitl.reason"
+    HITL_QUEUE: Final[str] = "aiobs.hitl.queue"
+    HITL_CONFIDENCE: Final[str] = "aiobs.hitl.confidence"
+
+    #: Chapter 17. The delegation chain, serialized onto the current span.
+    RESPONSIBILITY_CHAIN: Final[str] = "aiobs.responsibility.chain"
+    RESPONSIBILITY_PRINCIPAL: Final[str] = "aiobs.responsibility.principal"
+
     DRIFT_SCORE: Final[str] = "aiobs.drift.score"
     DRIFT_METHOD: Final[str] = "aiobs.drift.method"
 

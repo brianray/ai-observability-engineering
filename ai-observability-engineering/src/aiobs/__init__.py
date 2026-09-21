@@ -29,6 +29,7 @@ from .instrument import (
     set_eval_attributes,
     set_llm_attributes,
 )
+from .logging import LogRecord, capture_logs, get_logger
 from .pillars import Layer, Pillar, Scope
 from .providers import ChatResponse, FailureMode, LLMProvider, MockProvider
 from .risk import OwaspLLM, scan
@@ -47,6 +48,7 @@ __all__ = [
     "FailureMode",
     "GenAI",
     "LLMProvider",
+    "LogRecord",
     "Layer",
     "MastFailureMode",
     "MockProvider",
@@ -56,11 +58,13 @@ __all__ = [
     "Scope",
     "__version__",
     "capture",
+    "capture_logs",
     "configure",
     "cost_per_outcome",
     "default_suite",
     "detect_drift",
     "get_finished_spans",
+    "get_logger",
     "get_tracer",
     "llm_span",
     "observe",

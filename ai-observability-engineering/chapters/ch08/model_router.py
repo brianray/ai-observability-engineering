@@ -20,7 +20,11 @@ PRICING_PATH = Path(__file__).with_name("pricing.json")
 PRICING = json.loads(PRICING_PATH.read_text(encoding="utf-8"))
 
 SMALL_MODEL = "claude-haiku-4-5"
-LARGE_MODEL = "claude-sonnet-4-5"
+# Table 8.1 tiers the price book Small / Mid / Large. The large tier is the
+# Opus row, not the Sonnet one; pointing LARGE_MODEL at Sonnet silently
+# under-reports every routed estimate by the Opus-to-Sonnet price ratio.
+LARGE_MODEL = "claude-opus-4-1"
+MID_MODEL = "claude-sonnet-4-5"
 COMPLEXITY_TOKEN_THRESHOLD = 300
 
 _ANTHROPIC_COUNT_TOKENS_ENDPOINT = "https://api.anthropic.com/v1/messages/count_tokens"

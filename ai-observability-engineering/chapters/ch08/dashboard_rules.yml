@@ -1,18 +1,21 @@
+# Generated from pricing.json by chapters/ch08/pricing_rules.py.
+# Do not hand-edit: regenerate with `python -m chapters.ch08.pricing_rules`.
+# Prices retrieved_on: 2026-09-21
 groups:
   - name: chapter_8_pricing
     rules:
       - record: llm_token_price_usd_per_mtok
-        expr: vector(0.8)
+        expr: vector(1.0)
         labels:
           model: claude-haiku-4-5
           price_type: input
       - record: llm_token_price_usd_per_mtok
-        expr: vector(0.08)
+        expr: vector(0.1)
         labels:
           model: claude-haiku-4-5
           price_type: cached_input
       - record: llm_token_price_usd_per_mtok
-        expr: vector(4.0)
+        expr: vector(5.0)
         labels:
           model: claude-haiku-4-5
           price_type: output

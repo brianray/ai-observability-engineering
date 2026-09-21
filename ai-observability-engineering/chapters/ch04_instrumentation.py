@@ -13,6 +13,47 @@ DOCS = {
     "warranty": "Hardware carries a twelve month limited warranty from delivery",
     "refunds": "Refund extensions apply only to active products purchased after March 2025",
 }
+SLO_TARGETS = {
+    "latency_p95_ms": {
+        "target": 400.0,
+        "goal": "at_most",
+        "source": "Chapter 4 scorecard latency SLO",
+    },
+    "ttft_ms": {
+        "target": 60.0,
+        "goal": "at_most",
+        "source": "Chapter 4 scorecard TTFT SLO",
+    },
+    "tokens_per_second": {
+        "target": 45.0,
+        "goal": "at_least",
+        "source": "Chapter 4 scorecard throughput floor",
+    },
+    "groundedness": {
+        "target": 0.85,
+        "goal": "at_least",
+        "source": "Chapter 4 scorecard groundedness floor",
+    },
+    "hallucination": {
+        "target": 0.1,
+        "goal": "at_most",
+        "source": "Chapter 4 scorecard hallucination ceiling",
+    },
+}
+_SCORECARD_FACTORS = {
+    "current": {
+        "ttft_ms": 1.0,
+        "tokens_per_second": 1.0,
+        "groundedness": 1.0,
+        "hallucination": 1.0,
+    },
+    "prior": {
+        "ttft_ms": 1.1,
+        "tokens_per_second": 0.99,
+        "groundedness": 0.99,
+        "hallucination": 1.1,
+    },
+}
 
 
 class _DeterministicClock:
@@ -24,6 +65,36 @@ class _DeterministicClock:
 
     def sleep(self, seconds: float) -> None:
         self._now += seconds
+
+
+def slo_targets_from_ch04() -> dict[str, dict[str, object]]:
+    """Return the Chapter 4 scorecard definitions used by Chapter 9."""
+    return {metric: dict(spec) for metric, spec in SLO_TARGETS.items()}
+
+
+def chapter_4_scorecard(
+    provider: MockProvider | None = None, *, period: str = "current"
+) -> dict[str, float]:
+    """Deterministic Chapter 4 scorecard figures for executive reporting."""
+    try:
+        factors = _SCORECARD_FACTORS[period]
+    except KeyError as exc:
+        raise ValueError(f"unknown period {period!r}") from exc
+
+    active_provider = provider or MockProvider()
+    question = "what are the warranty terms"
+    context = ". ".join(_search(question))
+    reply = active_provider.chat(question, context=context)
+    scores = default_suite().scores(reply.text, context=context, prompt=question)
+    latency = measure_ttft(clock=_DeterministicClock(), provider=active_provider)
+    return {
+        "ttft_ms": round(latency["ttft_ms"] * factors["ttft_ms"], 3),
+        "tokens_per_second": round(
+            latency["tokens_per_second"] * factors["tokens_per_second"], 3
+        ),
+        "groundedness": round(scores["groundedness"] * factors["groundedness"], 6),
+        "hallucination": round(scores["hallucination"] * factors["hallucination"], 6),
+    }
 
 
 @observe(pillar=Pillar.PERFORMANCE, layer=Layer.DATA_AND_RETRIEVAL, name="vector_search")
@@ -87,9 +158,9 @@ def rag_pipeline_traced() -> dict:
     layer=Layer.MODEL_AND_INFERENCE,
     listing="4.5",
 )
-def measure_ttft(clock=None) -> dict:
+def measure_ttft(clock=None, provider: MockProvider | None = None) -> dict:
     """TTFT starts with the first non-empty content delta, not the role chunk."""
-    provider = MockProvider()
+    provider = provider or MockProvider()
     prompt = "what are the warranty terms"
     context = DOCS["warranty"]
     active_clock = clock or _DeterministicClock()

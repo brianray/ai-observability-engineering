@@ -1,4 +1,23 @@
-"""Chapter 17: Accountability When Responsibility Is Delegated."""
+"""Chapter 17: Accountability When Responsibility Is Delegated.
+
+This is the module path the manuscript cites, and it is the single import
+surface for all three of the chapter's listings:
+
+* Listing 17.1, the responsibility chain: ``start_chain``, ``delegate``,
+  ``current_chain``, ``annotate_current_span``
+* Listing 17.2, the governance checkpoint: ``make_governance_checkpoint``,
+  ``ApprovalRequest``, ``ApprovalResponse``
+* Listing 17.3, the decision record: ``DecisionRecord``,
+  ``assemble_decision_record``
+
+The implementations live in ``chapters/ch17/`` as three separate modules,
+following the same pattern as Chapters 5, 6 and 8, because three distinct
+concerns in one file is how the second one stops being readable. They are
+re-exported here so the manuscript's citation resolves and a reader can
+import everything from one place::
+
+    from chapters.ch17_accountability import start_chain, delegate
+"""
 
 from __future__ import annotations
 
@@ -6,7 +25,51 @@ from aiobs import AgentRun, Aiobs, Layer, MockProvider, Pillar, get_tracer
 from aiobs.instrument import set_llm_attributes
 from aiobs.semconv import GenAI
 
+from .ch17 import (
+    DECISION_APPROVE,
+    DECISION_REJECT,
+    DEFAULT_APPROVER_ROLES,
+    ApprovalRequest,
+    ApprovalResponse,
+    ChainNotStartedError,
+    DecisionRecord,
+    Hop,
+    annotate_current_span,
+    apply_context,
+    assemble_decision_record,
+    carry_context,
+    chain_as_json,
+    current_chain,
+    current_principal,
+    delegate,
+    make_governance_checkpoint,
+    release_context,
+    start_chain,
+)
 from .registry import example
+
+__all__ = [
+    "DECISION_APPROVE",
+    "DECISION_REJECT",
+    "DEFAULT_APPROVER_ROLES",
+    "ApprovalRequest",
+    "ApprovalResponse",
+    "ChainNotStartedError",
+    "DecisionRecord",
+    "Hop",
+    "accountability_chain",
+    "annotate_current_span",
+    "apply_context",
+    "assemble_decision_record",
+    "carry_context",
+    "chain_as_json",
+    "current_chain",
+    "current_principal",
+    "delegate",
+    "make_governance_checkpoint",
+    "release_context",
+    "start_chain",
+]
 
 CONTEXT = "Configuration changes to production require a named approver"
 CHAIN = [

@@ -12,7 +12,7 @@ import pytest
 import yaml
 
 PRICING_PATH = Path("chapters/ch08/pricing.json")
-RULES_PATH = Path("chapters/ch08/pricing_rules.yml")
+RULES_PATH = Path("chapters/ch08/dashboard_rules.yml")
 QUERIES_PATH = Path("chapters/ch08/dashboard_queries.promql")
 
 
@@ -29,10 +29,10 @@ def test_pricing_rules_match_pricing_json():
     for rule in rules:
         labels = rule["labels"]
         model = labels["model"]
-        token_type = labels["token_type"]
+        price_type = labels["price_type"]
         expr = rule["expr"]
         value = float(expr.removeprefix("vector(").removesuffix(")"))
-        observed[(model, token_type)] = value
+        observed[(model, price_type)] = value
 
     for model, rates in pricing.items():
         assert observed[(model, "input")] == pytest.approx(rates["input_per_mtok"])

@@ -1,7 +1,8 @@
 """Dynamic model router: cheap model for simple queries, powerful for complex.
 
-Companion file: chapters/ch08/model_router.py
-Companion file: chapters/ch08_cost_engineering.py -- https://github.com/brianray/ai-observability-engineering/blob/main/chapters/ch08_cost_engineering.py
+Companion files:
+- ai-observability-engineering/chapters/ch08/model_router.py
+- ai-observability-engineering/chapters/ch08_cost_engineering.py
 """
 
 from __future__ import annotations

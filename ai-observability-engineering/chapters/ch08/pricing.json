@@ -1,6 +1,6 @@
 {
-  "retrieved_on": "2026-09-19",
-  "source": "Anthropic pricing page (unreachable from CI sandbox on retrieval date; values verified against the repository's existing Anthropic-aligned price book)",
+  "retrieved_on": "2026-09-21",
+  "source": "Anthropic public pricing hosts (www.anthropic.com and docs.anthropic.com) were unreachable from this sandbox on 2026-09-21 due to DNS lookup failures, so these values were carried forward from the repository's existing Chapter 8 Anthropic-aligned price book rather than re-verified live.",
   "models": {
     "claude-haiku-4-5": {
       "input_per_mtok": 0.8,

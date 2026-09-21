@@ -19,7 +19,11 @@ def _prompt_with_tokens(tokens: int) -> str:
     return " ".join(["tok"] * tokens)
 
 
-def test_count_tokens_uses_deterministic_local_fallback_without_key():
+def test_count_tokens_uses_deterministic_local_fallback_without_key(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("AIOBS_ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("AIOBS_COUNT_TOKENS_ENDPOINT", raising=False)
+
     assert count_tokens(_prompt_with_tokens(50)) == 50
 
 

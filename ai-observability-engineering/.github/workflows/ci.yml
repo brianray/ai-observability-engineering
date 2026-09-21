@@ -31,8 +31,5 @@ jobs:
       - name: Run unit tests
         run: python -m pytest tests/unit
 
-      - name: Validate Prometheus rules
-        run: promtool check rules chapters/ch08/pricing_rules.yml
-
-      - name: Validate Chapter 8 PromQL expressions
-        run: python -m pytest tests/unit/test_ch08_prometheus_artifacts.py -k dashboard_queries_parse
+      - name: Validate Chapter 8 Prometheus artifacts
+        run: bash chapters/ch08/verify_promql.sh

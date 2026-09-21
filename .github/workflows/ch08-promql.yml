@@ -1,0 +1,52 @@
+name: Chapter 8 checks
+
+on:
+  pull_request:
+    paths:
+      - ai-observability-engineering/chapters/ch08/**
+      - ai-observability-engineering/chapters/ch08_cost_engineering.py
+      - ai-observability-engineering/tests/unit/test_ch08_model_router.py
+      - ai-observability-engineering/tests/unit/test_ch08_token_budget.py
+      - ai-observability-engineering/tests/unit/test_ch08_prometheus_artifacts.py
+      - .github/workflows/ch08-promql.yml
+  push:
+    branches:
+      - main
+    paths:
+      - ai-observability-engineering/chapters/ch08/**
+      - ai-observability-engineering/chapters/ch08_cost_engineering.py
+      - ai-observability-engineering/tests/unit/test_ch08_model_router.py
+      - ai-observability-engineering/tests/unit/test_ch08_token_budget.py
+      - ai-observability-engineering/tests/unit/test_ch08_prometheus_artifacts.py
+      - .github/workflows/ch08-promql.yml
+
+jobs:
+  chapter-8:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-observability-engineering
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev]'
+
+      - name: Install promtool
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y prometheus
+
+      - name: Run Chapter 8 unit tests
+        run: python -m pytest tests/unit/test_ch08_model_router.py tests/unit/test_ch08_token_budget.py tests/unit/test_ch08_prometheus_artifacts.py
+
+      - name: Validate Chapter 8 Prometheus artifacts
+        run: bash chapters/ch08/verify_promql.sh

@@ -161,4 +161,5 @@ Desktop.ini
 
 # Large files and installers
 *.sh
+!ai-observability-engineering/chapters/ch08/verify_promql.sh
 Miniconda*

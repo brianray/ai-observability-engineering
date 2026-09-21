@@ -1,20 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-rules_file="chapters/ch08/dashboard_rules.yml"
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
-promtool check rules "$rules_file"
+promtool check rules "$script_dir/dashboard_rules.yml"
 
-python - <<'PY'
+AIOBS_CH08_DIR="$script_dir" python - <<'PY'
 from __future__ import annotations
 
+import os
 import subprocess
 import tempfile
 from pathlib import Path
 
 import yaml
 
-queries_path = Path("chapters/ch08/dashboard_queries.promql")
+queries_path = Path(os.environ["AIOBS_CH08_DIR"]) / "dashboard_queries.promql"
 expressions = [
     line.strip()
     for line in queries_path.read_text(encoding="utf-8").splitlines()

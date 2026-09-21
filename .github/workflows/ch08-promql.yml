@@ -20,6 +20,9 @@ on:
       - ai-observability-engineering/tests/unit/test_ch08_prometheus_artifacts.py
       - .github/workflows/ch08-promql.yml
 
+permissions:
+  contents: read
+
 jobs:
   chapter-8:
     runs-on: ubuntu-latest

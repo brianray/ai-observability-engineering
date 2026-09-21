@@ -1,11 +1,11 @@
 # Input spend rate in USD/sec by tenant and use case.
-sum by (tenant, use_case) (label_replace(rate(gen_ai_client_token_usage_total{token_type="input"}[5m]), "price_type", "$1", "token_type", "(.*)") * on (model, price_type) group_left llm_token_price_usd_per_mtok)
+sum by (tenant, use_case) ((label_replace(rate(gen_ai_client_token_usage_total{token_type="input"}[5m]), "price_type", "$1", "token_type", "(.*)") / 1e6) * on (model, price_type) group_left llm_token_price_usd_per_mtok)
 
 # Total spend rate in USD/sec by model across input, cached-input, and output tokens.
-sum by (model) (label_replace(rate(gen_ai_client_token_usage_total{token_type=~"input|cached_input|output"}[5m]), "price_type", "$1", "token_type", "(.*)") * on (model, price_type) group_left llm_token_price_usd_per_mtok)
+sum by (model) ((label_replace(rate(gen_ai_client_token_usage_total{token_type=~"input|cached_input|output"}[5m]), "price_type", "$1", "token_type", "(.*)") / 1e6) * on (model, price_type) group_left llm_token_price_usd_per_mtok)
 
 # Cache-hit-adjusted spend rate by tenant and use case, pricing cached input separately from full-price tokens.
-sum by (tenant, use_case) (label_replace(rate(gen_ai_client_token_usage_total{token_type=~"input|cached_input|output"}[5m]), "price_type", "$1", "token_type", "(.*)") * on (model, price_type) group_left llm_token_price_usd_per_mtok)
+sum by (tenant, use_case) ((label_replace(rate(gen_ai_client_token_usage_total{token_type=~"input|cached_input|output"}[5m]), "price_type", "$1", "token_type", "(.*)") / 1e6) * on (model, price_type) group_left llm_token_price_usd_per_mtok)
 
 # Monthly fully loaded cost per acceptable answer from the Chapter 8 accounting example.
 aiobs_cost:fully_loaded_per_answer:monthly

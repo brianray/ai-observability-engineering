@@ -4,6 +4,7 @@ from .fully_loaded_cost import fully_loaded_cost_per_acceptable_answer
 from .model_router import (
     COMPLEXITY_TOKEN_THRESHOLD,
     LARGE_MODEL,
+    MID_MODEL,
     SMALL_MODEL,
     RoutingDecision,
     cost_estimate_usd,
@@ -15,6 +16,7 @@ from .token_budget import BudgetedContext, fit_context_to_budget, summarize_hist
 __all__ = [
     "COMPLEXITY_TOKEN_THRESHOLD",
     "LARGE_MODEL",
+    "MID_MODEL",
     "SMALL_MODEL",
     "BudgetedContext",
     "RoutingDecision",

@@ -8,11 +8,26 @@ answer.
 
 from __future__ import annotations
 
-from aiobs import Aiobs, Layer, MockProvider, Pillar, Scope, default_suite, get_tracer
+from aiobs import (
+    Aiobs,
+    Layer,
+    MockProvider,
+    Pillar,
+    Scope,
+    default_suite,
+    get_logger,
+    get_tracer,
+)
 from aiobs.instrument import set_eval_attributes, set_llm_attributes
 from aiobs.semconv import GenAI
 
 from .registry import example
+
+#: The one structured logger. Chapter 10's detector imports the same
+#: factory, so a reader who wires up this chapter's logging gets
+#: Chapter 10's security events on the same stream, already
+#: correlated to the trace.
+log = get_logger(__name__)
 
 CONTEXT = "Standard shipping takes three to five business days"
 _PROMETHEUS_WINDOWS = {
@@ -126,7 +141,11 @@ def four_signals() -> dict:
             output_tokens=reply.output_tokens,
         )
         set_eval_attributes(span, scores, evaluator="heuristic-v1")
-        span.add_event("retrieval.completed", {"documents": 1})
+        # The log signal, emitted through the shared structured logger
+        # rather than as a span event. A span event is part of the trace;
+        # a log is its own signal, and the chapter's point is that they
+        # answer different questions.
+        log.emit("retrieval.completed", documents=1, source="policy_kb")
 
     return {
         "logs": "discrete events: retrieval.completed fired once",

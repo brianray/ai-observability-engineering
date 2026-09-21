@@ -1,11 +1,12 @@
 {
   "retrieved_on": "2026-09-21",
-  "source": "Anthropic public pricing hosts (www.anthropic.com and docs.anthropic.com) were unreachable from this sandbox on 2026-09-21 due to DNS lookup failures, so these values were carried forward from the repository's existing Chapter 8 Anthropic-aligned price book rather than re-verified live.",
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+  "source_note": "Base input, cache-hit (cached input), and output rates in USD per million tokens, transcribed from the Anthropic public pricing table on the retrieved_on date. The cached_input_per_mtok column is the 'Cache hits & refreshes' rate, not either cache-write rate.",
   "models": {
     "claude-haiku-4-5": {
-      "input_per_mtok": 0.8,
-      "cached_input_per_mtok": 0.08,
-      "output_per_mtok": 4.0
+      "input_per_mtok": 1.0,
+      "cached_input_per_mtok": 0.1,
+      "output_per_mtok": 5.0
     },
     "claude-sonnet-4-5": {
       "input_per_mtok": 3.0,

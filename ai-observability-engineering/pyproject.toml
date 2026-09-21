@@ -28,7 +28,12 @@ dependencies = [
   "opentelemetry-semantic-conventions>=0.51b0",
   "PyYAML==6.0.3",
   "scikit-learn==1.9.1",
-  "scipy==1.18.1",
+  # scipy 1.18.x requires Python 3.12+, but this project declares
+  # requires-python >= 3.10 and ships 3.10/3.11 classifiers. Without the
+  # marker, `pip install -e .` fails outright on 3.10 and 3.11 with "no
+  # matching distribution", which makes the declared floor a fiction.
+  "scipy==1.18.1; python_version >= '3.12'",
+  "scipy>=1.15,<1.18; python_version < '3.12'",
 ]
 
 [project.optional-dependencies]
@@ -39,7 +44,14 @@ dev = [
   "ruff>=0.6",
   "mypy>=1.11",
 ]
-all = ["ai-observability-engineering[otlp,dev]"]
+# Optional, and deliberately so. The book's contract is that every
+# example runs offline with no key and no service, and these pull large
+# dependency trees. The chapters that use them degrade gracefully: their
+# tests skip, and the pinned-surface tests that guard the listings skip
+# with them.
+agents = ["langgraph>=1.2,<2", "langgraph-checkpoint>=4,<5"]
+evals = ["ragas>=0.4,<0.5"]
+all = ["ai-observability-engineering[otlp,dev,agents,evals]"]
 
 [project.scripts]
 aiobs-sim = "simulator.app:main"

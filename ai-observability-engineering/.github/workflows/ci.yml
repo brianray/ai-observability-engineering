@@ -31,8 +31,44 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y prometheus
 
-      - name: Run unit tests
-        run: python -m pytest tests/unit
+      - name: Run the full test suite
+        run: python -m pytest
+
+      - name: Lint
+        run: python -m ruff check chapters src tests
 
       - name: Validate Chapter 8 Prometheus artifacts
         run: bash chapters/ch08/verify_promql.sh
+
+      - name: Validate Chapter 13 and 14 Prometheus artifacts
+        run: |
+          promtool check rules chapters/ch13/fairness_alerts.yaml
+          promtool check rules chapters/ch14/hitl_recording_rules.yml
+
+  # The optional extras are exercised in a separate job so a langgraph or
+  # ragas release cannot take the main build down, while still failing
+  # loudly enough that a stale listing gets noticed before print.
+  optional-extras:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install with optional extras
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,agents,evals]"
+
+      - name: Run the surface tests that guard the printed listings
+        run: |
+          python -m pytest \
+            tests/unit/test_pinned_external_surfaces.py \
+            tests/unit/test_ch13_fairness.py \
+            tests/unit/test_ch15_agent_tracing.py \
+            tests/unit/test_ch17_accountability.py

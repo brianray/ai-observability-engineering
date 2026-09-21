@@ -1,0 +1,29 @@
+# Chapter 14, Listing 14.3: the human-oversight dashboard.
+#
+# The panel that matters most is the last one. A review queue with an
+# overturn rate near zero is not a queue that is working; it is a queue
+# nobody is really reading, and it will pass every audit that only asks
+# whether review happened.
+
+# Share of recommendations routed to a human, by reason. The three
+# reasons are not interchangeable, so this is never summed into one rate.
+sum by (reason) (rate(aiobs_hitl_review_outcomes_total[1h])) / ignoring(reason) group_left sum(rate(aiobs_hitl_review_outcomes_total[1h]))
+
+# Queue depth per queue. The operational signal: work arriving faster
+# than reviewers clear it.
+sum by (queue) (aiobs_hitl_queue_depth)
+
+# Median and p95 review time by queue, in seconds. A p95 that collapses
+# is a sign of rubber-stamping, not efficiency.
+histogram_quantile(0.5, sum by (queue, le) (rate(aiobs_hitl_review_seconds_bucket[1h])))
+histogram_quantile(0.95, sum by (queue, le) (rate(aiobs_hitl_review_seconds_bucket[1h])))
+
+# Overturn rate: the fraction of reviewed items the human did not uphold.
+# Near zero means the queue is theater. Near one means the model should
+# not be making these calls at all.
+sum(rate(aiobs_hitl_review_outcomes_total{outcome=~"modify|override"}[24h])) / sum(rate(aiobs_hitl_review_outcomes_total[24h]))
+
+# Sampled-audit overturn rate specifically. This is the number that can
+# tell you the confidence threshold is set wrong, because it is measured
+# on work the model was sure about.
+sum(rate(aiobs_hitl_review_outcomes_total{queue="audit_sample",outcome=~"modify|override"}[7d])) / sum(rate(aiobs_hitl_review_outcomes_total{queue="audit_sample"}[7d]))

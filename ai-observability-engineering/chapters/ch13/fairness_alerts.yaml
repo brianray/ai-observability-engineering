@@ -1,0 +1,78 @@
+# Chapter 13, Listing 13.3: alerting on fairness metrics.
+#
+# Two design decisions worth the comment.
+#
+# 1. The alerts fire on a SUSTAINED gap, not an instantaneous one. A
+#    fairness metric computed over a short window is noisy at realistic
+#    traffic, and a pager that fires on noise gets muted, which is worse
+#    than not having it.
+#
+# 2. There is an alert for the metric going ABSENT. A fairness gauge that
+#    stops being published looks identical to a fairness problem that
+#    went away, and the second interpretation is the one people reach
+#    for. This is the alert that catches the quarter where the eval job
+#    was silently failing.
+#
+# Thresholds here are the book's illustrative values. Setting them for
+# real is a governance decision, not an engineering one; see the SME
+# REVIEW box in Section 13.4.
+
+groups:
+  - name: fairness
+    interval: 5m
+    rules:
+      - alert: DemographicParityGapHigh
+        expr: aiobs_fairness_parity_gap > 0.10
+        for: 30m
+        labels:
+          severity: page
+          pillar: responsibility
+        annotations:
+          summary: "Demographic parity gap above threshold"
+          description: >-
+            The spread in positive rates across measurable groups has exceeded
+            0.10 for 30 minutes. Groups below the minimum sample size are
+            excluded from this gap by construction.
+          runbook: "https://runbooks.example.com/ai/fairness-parity"
+
+      - alert: EqualizedOddsGapHigh
+        expr: aiobs_fairness_equalized_odds_gap > 0.10
+        for: 30m
+        labels:
+          severity: page
+          pillar: responsibility
+        annotations:
+          summary: "Equalized odds gap above threshold"
+          description: >-
+            The larger of the true-positive-rate and false-positive-rate gaps
+            has exceeded 0.10 for 30 minutes.
+          runbook: "https://runbooks.example.com/ai/fairness-equalized-odds"
+
+      - alert: FairnessMetricsAbsent
+        expr: absent(aiobs_fairness_parity_gap)
+        for: 1h
+        labels:
+          severity: page
+          pillar: responsibility
+        annotations:
+          summary: "Fairness metrics are not being published"
+          description: >-
+            No parity gap has been published for an hour. A missing fairness
+            metric and a healthy one are indistinguishable on a dashboard, so
+            this is treated as a page rather than a warning.
+          runbook: "https://runbooks.example.com/ai/fairness-pipeline"
+
+      - alert: FairnessGroupSuppressedTooLong
+        expr: min_over_time(aiobs_fairness_sample_size[7d]) < 50
+        for: 7d
+        labels:
+          severity: ticket
+          pillar: responsibility
+        annotations:
+          summary: "A monitored group has stayed below the reporting threshold"
+          description: >-
+            This group has been too small to publish rates for a week. That is
+            not a fairness finding on its own, but a group that is never
+            measurable is a group the fairness programme does not actually
+            cover, and someone has to decide what to do about it.
+          runbook: "https://runbooks.example.com/ai/fairness-small-groups"

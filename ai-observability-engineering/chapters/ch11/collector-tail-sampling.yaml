@@ -1,0 +1,69 @@
+# Chapter 11: keeping 100% of high-risk decision spans.
+#
+# This is a FRAGMENT. It layers onto the collector configuration in
+# config/otel-collector.yaml (Chapter 5) rather than replacing it. The
+# two must stay consistent: Chapter 5's pipeline uses a probabilistic
+# sampler, and a probabilistic sampler cannot express "keep everything
+# from this one system." Tail sampling can, because it decides once the
+# whole trace is in hand.
+#
+# The rule the regulation actually imposes is record-keeping (EU AI Act
+# Article 12) for high-risk systems. A 10% sample is not a record.
+#
+# Apply:
+#   1. Add the processor below to the `processors:` block of
+#      config/otel-collector.yaml.
+#   2. In the `traces/sampled` pipeline, REPLACE probabilistic_sampler/traces
+#      with tail_sampling/compliance. Running both drops high-risk spans
+#      before tail sampling ever sees them.
+
+processors:
+  tail_sampling/compliance:
+    # Long enough for a multi-agent trace (Chapters 15-17) to finish.
+    # Too short and a slow trace is sampled on partial evidence.
+    decision_wait: 30s
+    num_traces: 50000
+    expected_new_traces_per_sec: 200
+    policies:
+      # 1. Anything a high-risk system touched is kept in full. This is
+      #    the Article 12 record-keeping obligation, expressed as config.
+      - name: keep-all-high-risk-decisions
+        type: string_attribute
+        string_attribute:
+          key: aiobs.retention.class
+          values: [high_risk_decision]
+          enabled_regex_matching: false
+          invert_match: false
+
+      # 2. Errors are kept regardless of risk category. You do not get to
+      #    sample away the failures.
+      - name: keep-all-errors
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+
+      # 3. Anything a guardrail blocked or flagged (Chapter 10).
+      - name: keep-guardrail-actions
+        type: string_attribute
+        string_attribute:
+          key: aiobs.guardrail.input.action
+          values: [block, flag]
+          enabled_regex_matching: false
+
+      # 4. Everything else: the same 10% Chapter 5 uses, so the two
+      #    chapters describe one sampling story rather than two.
+      - name: sample-the-rest
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+
+service:
+  pipelines:
+    traces/sampled:
+      receivers: [otlp]
+      processors:
+        - memory_limiter
+        - attributes/redact
+        - tail_sampling/compliance
+        - batch
+      exporters: [otlphttp/traces, debug]

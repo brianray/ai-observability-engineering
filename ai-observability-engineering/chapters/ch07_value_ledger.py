@@ -104,6 +104,39 @@ def ledger_to_markdown(ledger: AIValueLedger) -> str:
     return "\n".join(lines)
 
 
+def ledger_summary_metrics(ledger: AIValueLedger) -> dict[str, float | str]:
+    """Executive-summary metrics derived from Table 7.3."""
+    without_assumed = ledger.without_confidence("assumed")
+    by_confidence = ledger.by_confidence()
+    return {
+        "costs_usd": ledger.costs(),
+        "benefits_usd": ledger.benefits(),
+        "roi_ratio": ledger.roi(),
+        "roi_without_assumed": without_assumed.roi(),
+        "assumed_value_usd": by_confidence.get("assumed", 0.0),
+        "ledger_markdown": ledger_to_markdown(ledger),
+    }
+
+
+def ledger_targets_from_ch07(
+    ledger: AIValueLedger | None = None,
+) -> dict[str, dict[str, float | str]]:
+    """Targets derived from the Chapter 7 ledger, not restated inline."""
+    summary = ledger_summary_metrics(ledger or table_7_3_ledger())
+    return {
+        "roi_ratio": {
+            "target": float(summary["roi_without_assumed"]),
+            "goal": "at_least",
+            "source": "Chapter 7 Table 7.3 measured-only ROI floor",
+        },
+        "assumed_value_usd": {
+            "target": float(summary["assumed_value_usd"]),
+            "goal": "at_most",
+            "source": "Chapter 7 Table 7.3 assumed-value cap",
+        },
+    }
+
+
 @example(
     chapter=7,
     key="value_ledger",

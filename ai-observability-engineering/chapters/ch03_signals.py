@@ -15,6 +15,38 @@ from aiobs.semconv import GenAI
 from .registry import example
 
 CONTEXT = "Standard shipping takes three to five business days"
+_PROMETHEUS_WINDOWS = {
+    "current": {"request_count": 2400, "error_rate": 0.004, "latency_p50_ms": 182.0, "latency_p95_ms": 460.0},
+    "prior": {"request_count": 2360, "error_rate": 0.005, "latency_p50_ms": 179.0, "latency_p95_ms": 380.0},
+}
+
+
+def prometheus_signal_snapshot(
+    provider: MockProvider | None = None, *, period: str = "current"
+) -> dict[str, float]:
+    """Deterministic Prometheus-style counters and latency rollups.
+
+    Chapter 9 needs period-over-period comparisons that can run in CI
+    without a live collector. The seeded mock provider supplies stable
+    token counts; the fixed window values stand in for the counters and
+    histogram summaries a Prometheus scrape would expose.
+    """
+    try:
+        window = _PROMETHEUS_WINDOWS[period]
+    except KeyError as exc:
+        raise ValueError(f"unknown period {period!r}") from exc
+
+    active_provider = provider or MockProvider()
+    reply = active_provider.chat("how long is shipping", context=CONTEXT)
+    requests = window["request_count"]
+    return {
+        "request_count": float(requests),
+        "error_rate": window["error_rate"],
+        "latency_p50_ms": window["latency_p50_ms"],
+        "latency_p95_ms": window["latency_p95_ms"],
+        "input_tokens_total": float(reply.input_tokens * requests),
+        "output_tokens_total": float(reply.output_tokens * requests),
+    }
 
 
 @example(

@@ -25,9 +25,37 @@ from __future__ import annotations
 from typing import Final
 
 #: The GenAI semantic convention version this repository is pinned to.
-#: Verify against https://opentelemetry.io/docs/specs/semconv/gen-ai/
-#: before relying on any specific attribute string in production.
+#:
+#: 1.37.0 is the last release of the core ``open-telemetry/semantic-conventions``
+#: repository that carried the GenAI conventions. They have since MOVED to a
+#: dedicated repository:
+#:
+#:     https://github.com/open-telemetry/semantic-conventions-genai
+#:
+#: The old path now serves a "Moved" stub. The new repository is still marked
+#: **Development** status and its README lists its Schema URL as "TODO", so
+#: there is no newer version number to pin to yet. That is why this stays at
+#: 1.37.0 rather than moving to something invented.
+#:
+#: Re-verified against the new repository on 2026-09-21. Every attribute below
+#: that the book uses still holds; see ``SEMCONV_SOURCE`` for where to check.
 SEMCONV_VERSION: Final[str] = "1.37.0"
+
+#: Where to verify the strings in this file.
+SEMCONV_SOURCE: Final[str] = (
+    "https://github.com/open-telemetry/semantic-conventions-genai"
+)
+
+#: Page-level citations, verified 2026-09-21. Note that the execute-tool span
+#: is defined on the MODEL spans page, not the agent spans page: the agent page
+#: carries only a cross-reference to it, and there is no separate tool-spans
+#: page (``gen-ai-tool-spans.md`` is a 404).
+SEMCONV_PAGES: Final[dict[str, str]] = {
+    "model_spans": "docs/gen-ai/gen-ai-spans.md",
+    "execute_tool_span": "docs/gen-ai/gen-ai-spans.md#execute-tool-span",
+    "agent_spans": "docs/gen-ai/gen-ai-agent-spans.md",
+    "metrics": "docs/gen-ai/gen-ai-metrics.md",
+}
 
 #: The GenAI namespace. Everything model-related belongs here.
 STANDARD_PREFIX: Final[str] = "gen_ai."

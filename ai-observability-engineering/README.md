@@ -638,14 +638,14 @@ Each chapter cites the module that implements its listings.
 | 7 | `chapters/ch07_cost_accounting.py` | `CostLedger`, `price_call`, `UnknownModelError` |
 | 8 | `chapters/ch08_cost_engineering.py`, `chapters/ch08/` | routing, cache accounting, fully loaded cost, and the monthly panel query in `chapters/ch08/dashboard_queries.promql` (updates once per invoice cycle by design) |
 | 9 | `chapters/ch09_roi.py` | `roi`, `cost_per_outcome` |
-| 10 | `chapters/ch10_llm_security.py` | `risk.scan`, `risk.detect_system_prompt_leak`, `OwaspLLM` |
-| 11 | `chapters/ch11_compliance.py` | NIST AI RMF / EU AI Act / ISO 42001 crosswalk |
-| 12 | `chapters/ch12_audit.py` | hash-chained audit records |
-| 13 | `chapters/ch13_fairness.py` | cohort quality parity |
-| 14 | `chapters/ch14_human_oversight.py` | `Aiobs.HUMAN_REVIEW_OUTCOME` |
-| 15 | `chapters/ch15_agent_tracing.py` | `AgentRun`, handoff depth |
-| 16 | `chapters/ch16_agent_cost.py` | `agents.classify`, `agents.failure_vector` |
-| 17 | `chapters/ch17_accountability.py` | delegation chain attributes |
+| 10 | `chapters/ch10_llm_security.py`, `chapters/ch10/` | `risk.scan`, `risk.detect_system_prompt_leak`, `OwaspLLM`, injection detector, input/output guardrails, structural red-team fixtures |
+| 11 | `chapters/ch11_compliance.py`, `chapters/ch11/` | NIST AI RMF / EU AI Act / ISO 42001 crosswalk, compliance span tagging, tail-sampling fragment, gap analysis |
+| 12 | `chapters/ch12_audit.py`, `chapters/ch12/` | hash-chained audit records, append-only stores (`O_EXCL` and S3 Object Lock), data custody, dossier assembly |
+| 13 | `chapters/ch13_fairness.py`, `chapters/ch13/` | cohort quality parity, RAG-quality eval, fairness gauges with small-group suppression, `chapters/ch13/fairness_alerts.yaml` |
+| 14 | `chapters/ch14_human_oversight.py`, `chapters/ch14/` | `Aiobs.HUMAN_REVIEW_OUTCOME`, HITL router with sampled audit, feedback capture, `chapters/ch14/hitl_dashboard.promql` |
+| 15 | `chapters/ch15_agent_tracing.py`, `chapters/ch15/` | `AgentRun`, handoff depth, handoff logging, health map (Graphviz + HTML), optional langgraph graph |
+| 16 | `chapters/ch16_agent_cost.py`, `chapters/ch16/` | `agents.classify`, `agents.failure_vector`, observable tool wrapper, loop-signature breaker, context and memory metrics |
+| 17 | `chapters/ch17_accountability.py`, `chapters/ch17/` | delegation chain attributes, responsibility chain, governance checkpoint, decision record |
 
 Cite it in the manuscript like this:
 

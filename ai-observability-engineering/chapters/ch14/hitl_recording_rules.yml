@@ -1,0 +1,62 @@
+# Chapter 14: the series the dashboard reads.
+#
+# These are recording rules rather than raw instrumentation so the
+# dashboard queries in hitl_dashboard.promql have stable names to join
+# on. The underlying counters come from the router and the feedback
+# capture path; the mock queue in hitl_router.py emits the same shapes so
+# the chapter runs end to end without a metrics backend.
+
+groups:
+  - name: human_oversight
+    interval: 1m
+    rules:
+      # Review outcomes by queue, reason and outcome. Kept as three
+      # labels rather than collapsed, because the overturn rate has to be
+      # sliceable by queue to be useful (see the sampled-audit panel).
+      - record: aiobs_hitl_review_outcomes_total
+        expr: sum by (queue, reason, outcome) (aiobs_hitl_review_outcomes_raw_total)
+
+      - record: aiobs_hitl_queue_depth
+        expr: sum by (queue) (aiobs_hitl_queue_items)
+
+      - record: aiobs_hitl_review_seconds:p50
+        expr: histogram_quantile(0.5, sum by (queue, le) (rate(aiobs_hitl_review_seconds_bucket[1h])))
+
+      - record: aiobs_hitl_review_seconds:p95
+        expr: histogram_quantile(0.95, sum by (queue, le) (rate(aiobs_hitl_review_seconds_bucket[1h])))
+
+      - record: aiobs_hitl_overturn_rate:24h
+        expr: >-
+          sum(rate(aiobs_hitl_review_outcomes_total{outcome=~"modify|override"}[24h]))
+          / sum(rate(aiobs_hitl_review_outcomes_total[24h]))
+
+  - name: human_oversight_alerts
+    interval: 5m
+    rules:
+      - alert: ReviewQueueIsTheater
+        expr: aiobs_hitl_overturn_rate:24h < 0.01
+        for: 24h
+        labels:
+          severity: ticket
+          pillar: responsibility
+        annotations:
+          summary: "Review queue overturn rate is near zero"
+          description: >-
+            Reviewers have upheld more than 99% of recommendations for a day.
+            That is either a very good model or a queue nobody is reading, and
+            the two are indistinguishable from the outside. Check review times
+            before concluding it is the former.
+          runbook: "https://runbooks.example.com/ai/oversight-overturn-rate"
+
+      - alert: ReviewQueueBacklogGrowing
+        expr: sum by (queue) (aiobs_hitl_queue_depth) > 500
+        for: 2h
+        labels:
+          severity: page
+          pillar: responsibility
+        annotations:
+          summary: "Human review backlog is growing"
+          description: >-
+            Work is arriving faster than reviewers clear it. Oversight that
+            cannot keep up stops being oversight and becomes a delay.
+          runbook: "https://runbooks.example.com/ai/oversight-backlog"

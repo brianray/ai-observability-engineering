@@ -246,7 +246,7 @@ def test_a_dossier_from_a_broken_chain_is_not_defensible(logger, tmp_path):
         logger.append(_payload(i))
 
     store = LocalFilesystemStore(tmp_path / "audit")
-    key = store.keys()[1]
+    key = store.list_keys()[1]
     raw = json.loads(store.get(key))
     assert raw["payload"]["decision"] != "overturned"  # the edit must be a real change
     raw["payload"]["decision"] = "overturned"

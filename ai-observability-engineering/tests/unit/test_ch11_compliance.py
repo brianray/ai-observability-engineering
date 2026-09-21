@@ -209,5 +209,5 @@ def test_omnibus_entered_into_force_three_days_after_publication():
         DIGITAL_OMNIBUS_PUBLISHED,
     )
 
-    assert DIGITAL_OMNIBUS_PUBLISHED == date(2026, 7, 24)
-    assert DIGITAL_OMNIBUS_IN_FORCE == date(2026, 7, 27)
+    assert date(2026, 7, 24) == DIGITAL_OMNIBUS_PUBLISHED
+    assert date(2026, 7, 27) == DIGITAL_OMNIBUS_IN_FORCE

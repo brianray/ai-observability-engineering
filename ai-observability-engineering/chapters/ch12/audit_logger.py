@@ -88,7 +88,7 @@ class AuditLogger:
 
     def _resume(self) -> None:
         """Pick up the chain where a previous process left it."""
-        keys = self._store.keys()
+        keys = self._store.list_keys()
         if not keys:
             return
         last = AuditRecord.from_dict(json.loads(self._store.get(keys[-1])))
@@ -132,5 +132,5 @@ class AuditLogger:
     def records(self) -> list[AuditRecord]:
         return [
             AuditRecord.from_dict(json.loads(self._store.get(key)))
-            for key in self._store.keys()
+            for key in self._store.list_keys()
         ]

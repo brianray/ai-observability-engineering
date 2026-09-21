@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-
 import json
 
-from aiobs import Aiobs, CostLedger, Layer, MockProvider, Pillar, get_tracer, GenAI
-
+from aiobs import Aiobs, CostLedger, GenAI, Layer, MockProvider, Pillar, get_tracer
 from aiobs.instrument import set_cost_attributes, set_llm_attributes
 
 from .ch08.model_router import LARGE_MODEL, PRICING_PATH, cost_estimate_usd

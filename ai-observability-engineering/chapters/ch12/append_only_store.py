@@ -42,7 +42,7 @@ class AppendOnlyStore(Protocol):
 
     def get(self, key: str) -> bytes: ...
 
-    def keys(self) -> list[str]: ...
+    def list_keys(self) -> list[str]: ...
 
 
 @dataclass
@@ -75,7 +75,7 @@ class LocalFilesystemStore:
     def get(self, key: str) -> bytes:
         return self._path(key).read_bytes()
 
-    def keys(self) -> list[str]:
+    def list_keys(self) -> list[str]:
         return sorted(p.name for p in self.root.iterdir() if p.is_file())
 
 
@@ -148,7 +148,7 @@ class S3ObjectLockStore:
         response = self.client.get_object(Bucket=self.bucket, Key=self._key(key))
         return response["Body"].read()
 
-    def keys(self) -> list[str]:
+    def list_keys(self) -> list[str]:
         response = self.client.list_objects_v2(Bucket=self.bucket, Prefix=self.prefix)
         return sorted(
             item["Key"].removeprefix(self.prefix) for item in response.get("Contents", [])

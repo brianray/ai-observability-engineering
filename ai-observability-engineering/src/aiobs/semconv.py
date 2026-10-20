@@ -127,6 +127,14 @@ class Eval:
     TOXICITY_SCORE: Final[str] = "eval.toxicity_score"
     EVALUATOR: Final[str] = "eval.evaluator"
     EVAL_SET_VERSION: Final[str] = "eval.set_version"
+    # Chapter 13, Listing 13.3: a decision-only judge in a confidence
+    # cascade. The confidence is what gated the decision; ``escalated``
+    # records whether the gate sent the item to the fallback judge; the
+    # fallback's name is kept so a later query can separate the two
+    # judges' verdicts instead of averaging over them.
+    CONFIDENCE: Final[str] = "eval.confidence"
+    ESCALATED: Final[str] = "eval.escalated"
+    FALLBACK_EVALUATOR: Final[str] = "eval.fallback_evaluator"
 
 
 class Aiobs:

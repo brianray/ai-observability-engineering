@@ -595,7 +595,7 @@ src/aiobs/                   the framework
   instrument.py              @observe decorator, llm_span(), attribute helpers
   pillars.py                 four pillars, five layers, four scopes
   providers/                 LLMProvider protocol + the offline mock
-  evals/                     evaluator interface, heuristics, suite runner
+  evals/                     evaluator interface, heuristics, decision-only judges and cascade, suite runner
   cost.py                    price book, cost ledger, ROI arithmetic
   drift.py                   PSI and two-sample KS
   risk.py                    OWASP LLM Top 10 detectors
@@ -641,7 +641,7 @@ Each chapter cites the module that implements its listings.
 | 10 | `chapters/ch10_llm_security.py`, `chapters/ch10/` | `risk.scan`, `risk.detect_system_prompt_leak`, `OwaspLLM`, injection detector, input/output guardrails, structural red-team fixtures |
 | 11 | `chapters/ch11_compliance.py`, `chapters/ch11/` | NIST AI RMF / EU AI Act / ISO 42001 crosswalk, compliance span tagging, tail-sampling fragment, gap analysis |
 | 12 | `chapters/ch12_audit.py`, `chapters/ch12/` | hash-chained audit records, append-only stores (`O_EXCL` and S3 Object Lock), data custody, dossier assembly |
-| 13 | `chapters/ch13_fairness.py`, `chapters/ch13/` | cohort quality parity, RAG-quality eval, fairness gauges with small-group suppression, `chapters/ch13/fairness_alerts.yaml` |
+| 13 | `chapters/ch13_fairness.py`, `chapters/ch13/` | cohort quality parity, RAG-quality eval, decision-only judge in a confidence cascade (`evals.CascadeEvaluator`, `evals.MockDecisionJudge`, `evals.JevJudge`), fairness gauges with small-group suppression, `chapters/ch13/fairness_alerts.yaml` |
 | 14 | `chapters/ch14_human_oversight.py`, `chapters/ch14/` | `Aiobs.HUMAN_REVIEW_OUTCOME`, HITL router with sampled audit, feedback capture, `chapters/ch14/hitl_dashboard.promql` |
 | 15 | `chapters/ch15_agent_tracing.py`, `chapters/ch15/` | `AgentRun`, handoff depth, handoff logging, health map (Graphviz + HTML), optional langgraph graph |
 | 16 | `chapters/ch16_agent_cost.py`, `chapters/ch16/` | `agents.classify`, `agents.failure_vector`, observable tool wrapper, loop-signature breaker, context and memory metrics |
@@ -657,7 +657,7 @@ Cite it in the manuscript like this:
 
 Every figure the simulator prints is **simulated**, produced by a seeded offline mock. The token counts, latencies, and dollar amounts are internally consistent and reproducible; they are not measurements of any real system, and the price book in `aiobs/cost.py` is illustrative. Refresh it before quoting a cost.
 
-The heuristic evaluators in `aiobs/evals/heuristics.py` exist so the examples run deterministically without a judge model. **Do not ship them as production quality gates.** Swap the implementation, keep the interface.
+The heuristic evaluators in `aiobs/evals/heuristics.py` and the `MockDecisionJudge` in `aiobs/evals/decision.py` exist so the examples run deterministically without a judge model. **Do not ship them as production quality gates.** Swap the implementation, keep the interface. `JevJudge` is the adapter for one hosted decision model (TypeSafe JEV); it is driven through an injected transport in tests and needs `TYPESAFE_API_KEY` to reach the live service.
 
 Framework citations in `chapters/ch11_compliance.py` are illustrative. Verify current article and control numbers against the source text before relying on them.
 

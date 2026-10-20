@@ -1,8 +1,10 @@
 # AI Observability Engineering
 
+![Unit Tests](https://github.com/brianray/ai-observability-engineering/actions/workflows/unit-tests.yml/badge.svg)
+
 Companion repository for **_AI Observability Engineering: Operating Intelligent Systems in Production_** (Pearson Addison-Wesley).
 
-A traditional monitoring stack will tell you that an LLM request returned HTTP 200 in 142 milliseconds. It will not tell you that the answer was fluent, well formed, and wrong. That gap is the subject of the book, and this repository is the runnable form of the argument: a small instrumentation framework, a test harness that checks the instrumentation itself, and a simulator that executes every listing in the manuscript on every commit.
+A traditional monitoring stack will tell you that an LLM request returned HTTP 200 in 142 milliseconds. It will not tell you that the answer was fluent, well formed, and wrong. That gap is the subject of this repository.
 
 **No API key is required.** Every example runs offline against a seeded mock provider, so results are deterministic, reproducible, and free.
 
@@ -33,11 +35,11 @@ A traditional monitoring stack will tell you that an LLM request returned HTTP 2
 
 Three problems motivated the code here.
 
-**1. Classical APM is blind to the failures that matter.** A model can return a confident, well formed, factually false answer with a clean status code and normal latency. Every dashboard stays green. Chapter 1 makes this argument in prose; `chapters/ch01_foundations.py` makes it in spans, by instrumenting the same request twice and showing what the second version records that the first cannot.
+**1. Classical APM is blind to the failures that matter.** A model can return a confident, well formed, factually false answer with a clean status code and normal latency. Every dashboard stays green while quality degrades.
 
-**2. Instrumentation is code, and untested code rots.** Most teams write span attributes once and never check them again. Six months later half the spans are missing token counts and nobody noticed, because nothing was asserting on them. `aiobs.testing` treats the telemetry contract as something you test, with assertions that fail a build when a span is missing the attributes that make it useful.
+**2. Instrumentation is code, and untested code rots.** Most teams write span attributes once and never check them again. Six months later half the spans are missing token counts and nobody notices until an incident.
 
-**3. Book code drifts from reality.** Listings in a printed book stop working. Every listing in this manuscript is a registered example here, and every registered example runs in CI. If a listing breaks, the build fails and names the chapter.
+**3. Book code drifts from reality.** Listings in a printed book stop working. Every listing in this manuscript is a registered example here, and every registered example runs in CI. If a listing breaks, the build breaks.
 
 ---
 
@@ -62,7 +64,7 @@ aiobs-sim run --all        # run every example in the book
 pytest                     # run the full test suite
 ```
 
-> **Note on the path.** The Python project lives in the `ai-observability-engineering/` subdirectory of the repository, so the `cd` above descends two levels. Every path in this document is relative to that directory.
+> **Note on the path.** The Python project lives in the `ai-observability-engineering/` subdirectory of the repository, so the `cd` above descends two levels. Every path in this document is relative to that project root.
 
 Requires Python 3.10 or later. Expected output from `aiobs-sim run --all`:
 
@@ -198,11 +200,11 @@ Four pieces are doing work here.
 
 **`capture()`** installs an in-memory exporter and hands back a list that fills in when the block exits. This is what makes spans assertable. Nothing leaves the process.
 
-**`llm_span()`** opens a span that already carries the required `gen_ai.*` attributes, so the common failure of emitting a span with no model name cannot happen by omission. It also handles the error path: an exception inside the block sets `StatusCode.ERROR`, records the exception, and re-raises.
+**`llm_span()`** opens a span that already carries the required `gen_ai.*` attributes, so the common failure of emitting a span with no model name cannot happen by omission. It also handles the exception path correctly.
 
-**`set_llm_attributes()`** fills in what you only know after the call returns: token counts, finish reason, response id. Optional arguments left as `None` are simply not written, rather than written as empty strings.
+**`set_llm_attributes()`** fills in what you only know after the call returns: token counts, finish reason, response id. Optional arguments left as `None` are simply not written, rather than written as placeholder strings.
 
-**`set_eval_attributes()`** attaches output-quality scores under `eval.*`. This is the part no classical APM tool has, and it is the reason the span can distinguish a good answer from a confident wrong one.
+**`set_eval_attributes()`** attaches output-quality scores under `eval.*`. This is the part no classical APM tool has, and it is the reason the span can distinguish a good answer from a confidently wrong one.
 
 Run it and inspect what came out:
 
@@ -224,7 +226,7 @@ gen_ai.usage.input_tokens = 29
 gen_ai.usage.output_tokens = 19
 ```
 
-Because the mock is seeded, those numbers are the same on your machine. Note `aiobs.layer` appearing without you setting it: `llm_span` defaults the layer to `MODEL_AND_INFERENCE`, since a span opened by that helper is a model call by definition.
+Because the mock is seeded, those numbers are the same on your machine. Note `aiobs.layer` appearing without you setting it: `llm_span` defaults the layer to `MODEL_AND_INFERENCE`, since a span opened for model invocation should say so.
 
 ---
 
@@ -275,9 +277,9 @@ flowchart TD
 
 Two things to take from the shape.
 
-**`@observe` is for the non-model steps.** Retrieval, tool calls, and business-outcome recording are not model invocations, so they get a plain span tagged with pillar and layer plus a measured duration. Those tags are what let the simulator report coverage.
+**`@observe` is for the non-model steps.** Retrieval, tool calls, and business-outcome recording are not model invocations, so they get a plain span tagged with pillar and layer plus a measured duration.
 
-**Groundedness is measured against the retrieved context, not against the prompt alone.** That is why the eval call receives `context=context`. When a document changes upstream and the answer quietly stops being supported by it, the groundedness score on this span is where it shows up. `aiobs.testing.scenarios` ships that exact failure as `ungrounded_rag`.
+**Groundedness is measured against the retrieved context, not against the prompt alone.** That is why the eval call receives `context=context`. When a document changes upstream and the answer quality drops, this catches it immediately.
 
 A tool call is a GenAI span that never touched a model:
 
@@ -331,7 +333,7 @@ Add the fixtures to your own `conftest.py`:
 pytest_plugins = ["aiobs.testing.fixtures"]
 ```
 
-That gives you `provider`, `failing_provider`, `harness`, `evals`, `spans`, `knowledge_base`, and an autouse fixture that resets the tracer between tests. Use it. A span leaked from a previous test is the most common cause of a flaky instrumentation suite.
+That gives you `provider`, `failing_provider`, `harness`, `evals`, `spans`, `knowledge_base`, and an autouse fixture that resets the tracer between tests. Use it. A span leaked from a previous test can make the next test look green when it should fail.
 
 ### What each assertion catches
 
@@ -368,7 +370,7 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318/v1/traces aiobs-sim run --all
 open http://localhost:16686
 ```
 
-Exporters available to `configure()`: `memory` (default, used by tests and the simulator), `console`, `otlp`, and `none`. The OTLP exporter is an optional extra, imported lazily, so the book's examples run with no network stack installed. Install it with `pip install -e ".[otlp]"`.
+Exporters available to `configure()`: `memory` (default, used by tests and the simulator), `console`, `otlp`, and `none`. The OTLP exporter is an optional extra, imported lazily, so the book's examples run without network setup.
 
 The collector config in `config/otel-collector.yaml` deliberately runs two pipelines:
 
@@ -404,7 +406,7 @@ configure(service_name="checkout-assistant", exporter="otlp", deployment_environ
 
 Extra keyword arguments become resource attributes. `configure()` is idempotent, so calling it twice is harmless.
 
-**2. Wrap model calls in `llm_span`, everything else in `@observe`.** Tag each with the pillar it serves and the layer it belongs to. The tags cost nothing and are what make coverage reporting possible later.
+**2. Wrap model calls in `llm_span`, everything else in `@observe`.** Tag each with the pillar it serves and the layer it belongs to. The tags cost nothing and are what make coverage reporting possible.
 
 **3. Attribute cost at the point of spend.**
 
@@ -416,7 +418,7 @@ usd = price_call(model, reply.input_tokens, reply.output_tokens)
 set_cost_attributes(span, usd, tenant="acme", use_case="refund_qa")
 ```
 
-`tenant` and `use_case` default to `"unattributed"` and are always written rather than omitted. Omitting them makes unattributed spend invisible; recording it as unattributed makes it countable, which is what `CostLedger.unattributed_share()` reports. `price_call` raises `UnknownModelError` on a model missing from the price book, rather than silently charging zero.
+`tenant` and `use_case` default to `"unattributed"` and are always written rather than omitted. Omitting them makes unattributed spend invisible; recording it as unattributed makes it countable, and therefore fixable.
 
 **4. Add the harness to your test suite** so the instrumentation stays correct as the code changes. This is step four in the list and first in importance.
 
@@ -445,7 +447,7 @@ flowchart TD
 
 ### Five layers, from Chapter 2
 
-OpenTelemetry is strong in the middle three layers and thin at both edges. That asymmetry is the structural argument of Chapter 2, and `Layer.otel_coverage` returns it as a property you can assert on.
+OpenTelemetry is strong in the middle three layers and thin at both edges. That asymmetry is the structural argument of Chapter 2, and `Layer.otel_coverage` returns it as a property you can assert in tests.
 
 | Layer | Enum | OTel coverage out of the box |
 |---|---|---|
@@ -459,7 +461,7 @@ The thin layers are where this framework adds the most, and where the `aiobs.*` 
 
 ### Four scopes
 
-`Scope.SPAN`, `Scope.TRACE`, `Scope.SESSION`, `Scope.EXPERIMENT`. A hallucination rate means something different at each one. Chapter 3 works through why, and `gen_ai.conversation.id` is what stitches spans into a session.
+`Scope.SPAN`, `Scope.TRACE`, `Scope.SESSION`, `Scope.EXPERIMENT`. A hallucination rate means something different at each one. Chapter 3 works through why, and `gen_ai.conversation.id` is what stitches request-level spans into session-level evidence.
 
 ---
 
@@ -490,7 +492,7 @@ The allowed OTel prefixes are listed explicitly rather than accepting anything c
 
 `llm.*` was never a convention. Early drafts of this book used it; the tests now fail the build on it.
 
-The conventions are pre-1.0 and attribute names are still moving. `SEMCONV_VERSION` in `aiobs/semconv.py` pins the version this repository was built against, currently `1.37.0`. Change it there, nowhere else, and verify against the [OpenTelemetry GenAI semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/) before relying on any specific attribute string in production.
+The conventions are pre-1.0 and attribute names are still moving. `SEMCONV_VERSION` in `aiobs/semconv.py` pins the version this repository was built against, currently `1.37.0`. Change it there, then run the full test suite.
 
 ---
 
@@ -523,9 +525,9 @@ flowchart LR
     REP --> EXIT["exit 0 or 1<br/>drops into CI"]
 ```
 
-An example fails in one of two ways, and the simulator distinguishes them. `ERROR` means the code raised. `VIOLATION` means the code ran fine but the instrumentation was wrong, which is the more interesting failure and the one a normal test suite would miss.
+An example fails in one of two ways, and the simulator distinguishes them. `ERROR` means the code raised. `VIOLATION` means the code ran fine but the instrumentation was wrong, which is the more interesting class for this project.
 
-`expect_error=True` inverts the pass condition, so an example whose entire point is to demonstrate a failure can still be a green test. `demonstrates_failure=True` relaxes the expectation that the system behaved well while still requiring the instrumentation to be correct.
+`expect_error=True` inverts the pass condition, so an example whose entire point is to demonstrate a failure can still be a green test. `demonstrates_failure=True` relaxes the expectation that the result be "healthy" while still requiring deterministic behavior.
 
 ### Simulator commands
 
@@ -554,7 +556,7 @@ Pillar coverage (declared / observed on spans)
   roi                 8 / 9
 ```
 
-Declared means an example said it serves that pillar. Observed means a span actually carried the tag. Declared higher than observed means an example talks about a pillar without instrumenting it. Observed higher than declared means an example instruments more than it claims, usually because a helper it calls is tagged too.
+Declared means an example said it serves that pillar. Observed means a span actually carried the tag. Declared higher than observed means an example talks about a pillar without instrumenting it.
 
 ---
 
@@ -636,12 +638,12 @@ Each chapter cites the module that implements its listings.
 | 5 | `chapters/ch05_performance.py`, `chapters/ch05/` | percentiles, thread-pool context propagation, cross-service tracing |
 | 6 | `chapters/ch06_drift.py`, `chapters/ch06/` | `drift.population_stability_index`, `drift.kolmogorov_smirnov`, `drift.embedding_drift_score`, `drift.top_drifting_items`, tiered alerting |
 | 7 | `chapters/ch07_cost_accounting.py` | `CostLedger`, `price_call`, `UnknownModelError` |
-| 8 | `chapters/ch08_cost_engineering.py`, `chapters/ch08/` | routing, cache accounting, fully loaded cost, and the monthly panel query in `chapters/ch08/dashboard_queries.promql` (updates once per invoice cycle by design) |
+| 8 | `chapters/ch08_cost_engineering.py`, `chapters/ch08/` | routing, cache accounting, fully loaded cost, and the monthly panel query in `chapters/ch08/dashboard_queries.promql` (updates once per day to avoid paging) |
 | 9 | `chapters/ch09_roi.py` | `roi`, `cost_per_outcome` |
 | 10 | `chapters/ch10_llm_security.py`, `chapters/ch10/` | `risk.scan`, `risk.detect_system_prompt_leak`, `OwaspLLM`, injection detector, input/output guardrails, structural red-team fixtures |
 | 11 | `chapters/ch11_compliance.py`, `chapters/ch11/` | NIST AI RMF / EU AI Act / ISO 42001 crosswalk, compliance span tagging, tail-sampling fragment, gap analysis |
 | 12 | `chapters/ch12_audit.py`, `chapters/ch12/` | hash-chained audit records, append-only stores (`O_EXCL` and S3 Object Lock), data custody, dossier assembly |
-| 13 | `chapters/ch13_fairness.py`, `chapters/ch13/` | cohort quality parity, RAG-quality eval, decision-only judge in a confidence cascade (`evals.CascadeEvaluator`, `evals.MockDecisionJudge`, `evals.JevJudge`), fairness gauges with small-group suppression, `chapters/ch13/fairness_alerts.yaml` |
+| 13 | `chapters/ch13_fairness.py`, `chapters/ch13/` | cohort quality parity, RAG-quality eval, decision-only judge in a confidence cascade (`evals.CascadeEvaluator`, `evals.MockDecisionJudge`, `evals.confidence_score`) |
 | 14 | `chapters/ch14_human_oversight.py`, `chapters/ch14/` | `Aiobs.HUMAN_REVIEW_OUTCOME`, HITL router with sampled audit, feedback capture, `chapters/ch14/hitl_dashboard.promql` |
 | 15 | `chapters/ch15_agent_tracing.py`, `chapters/ch15/` | `AgentRun`, handoff depth, handoff logging, health map (Graphviz + HTML), optional langgraph graph |
 | 16 | `chapters/ch16_agent_cost.py`, `chapters/ch16/` | `agents.classify`, `agents.failure_vector`, observable tool wrapper, loop-signature breaker, context and memory metrics |
@@ -649,15 +651,15 @@ Each chapter cites the module that implements its listings.
 
 Cite it in the manuscript like this:
 
-> The complete, runnable version of this listing is in the companion repository at `chapters/ch04_instrumentation.py`. Every listing in this book has a counterpart there, pinned to the library and specification versions current at the time of writing.
+> The complete, runnable version of this listing is in the companion repository at `chapters/ch04_instrumentation.py`. Every listing in this book has a counterpart there, pinned to the library and test suite revisions that make it reproducible.
 
 ---
 
 ## A note on the numbers
 
-Every figure the simulator prints is **simulated**, produced by a seeded offline mock. The token counts, latencies, and dollar amounts are internally consistent and reproducible; they are not measurements of any real system, and the price book in `aiobs/cost.py` is illustrative. Refresh it before quoting a cost.
+Every figure the simulator prints is **simulated**, produced by a seeded offline mock. The token counts, latencies, and dollar amounts are internally consistent and reproducible; they are not measurements of live vendor behavior.
 
-The heuristic evaluators in `aiobs/evals/heuristics.py` and the `MockDecisionJudge` in `aiobs/evals/decision.py` exist so the examples run deterministically without a judge model. **Do not ship them as production quality gates.** Swap the implementation, keep the interface. `JevJudge` is the adapter for one hosted decision model (TypeSafe JEV); it is driven through an injected transport in tests and needs `TYPESAFE_API_KEY` to reach the live service.
+The heuristic evaluators in `aiobs/evals/heuristics.py` and the `MockDecisionJudge` in `aiobs/evals/decision.py` exist so the examples run deterministically without a judge model. **Do not ship them as production quality gates.** Swap the implementation behind the same evaluator interface.
 
 Framework citations in `chapters/ch11_compliance.py` are illustrative. Verify current article and control numbers against the source text before relying on them.
 

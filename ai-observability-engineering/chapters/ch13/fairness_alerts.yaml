@@ -1,4 +1,4 @@
-# Chapter 13, Listing 13.3: alerting on fairness metrics.
+# Chapter 13, Listing 13.4: alerting on fairness metrics.
 #
 # Two design decisions worth the comment.
 #
@@ -76,3 +76,19 @@ groups:
             measurable is a group the fairness programme does not actually
             cover, and someone has to decide what to do about it.
           runbook: "https://runbooks.example.com/ai/fairness-small-groups"
+
+      - alert: BaseRateShift
+        expr: abs(aiobs_fairness_base_rate - aiobs_fairness_base_rate offset 7d) > 0.05
+        for: 1d
+        labels:
+          severity: ticket
+          pillar: responsibility
+        annotations:
+          summary: "A group's base rate has moved against last week's"
+          description: >-
+            The share of this group that actually has the outcome has moved by
+            more than five points in a week. A base rate is a property of the
+            population, not the model, and a parity gap can open on a base-rate
+            shift alone while every error rate stays put. Triage any parity
+            page against this alert before anyone touches the model.
+          runbook: "https://runbooks.example.com/ai/fairness-base-rate"

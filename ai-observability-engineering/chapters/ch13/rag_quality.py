@@ -8,6 +8,14 @@ invites someone to alert on one and report the other, and then to explain
 a discrepancy that does not exist. The identity is asserted in the tests
 for that reason.
 
+**It is a claim-level rate, and the response-level rate is a different
+number.** Faithfulness is the share of a response's claims that the
+contexts support, so ``1 - faithfulness`` is the average share of claims
+that are unsupported, not the share of responses that contain one. Ten
+percent of responses each carrying one unsupported claim in ten is a
+claim-level rate of one percent and a response-level rate of ten
+percent, and the second is what a user experiences. Both are published.
+
 **The judge is injected.** An eval whose judge is a live model call is an
 eval you cannot run in CI and cannot reproduce next quarter. The mock
 judge here is deterministic; swap it for a ragas-backed judge in
@@ -104,10 +112,17 @@ class RagQualityResult:
     sample_count: int
     faithfulness_mean: float
     answer_relevancy_mean: float
+    #: Share of responses with at least one unsupported claim, meaning a
+    #: faithfulness score below 1.0.
+    response_hallucination_rate: float
 
     @property
     def hallucination_rate(self) -> float:
-        """Not an independent signal. The complement of faithfulness."""
+        """Not an independent signal. The complement of faithfulness.
+
+        Claim-level: the average share of a response's claims that are
+        unsupported. Read it beside ``response_hallucination_rate``.
+        """
         return round(1.0 - self.faithfulness_mean, 10)
 
 
@@ -121,8 +136,10 @@ def evaluate_rag_quality(
     scores = [judge(sample) for sample in samples]
     faithfulness = sum(s[0] for s in scores) / len(scores)
     relevancy = sum(s[1] for s in scores) / len(scores)
+    with_unsupported_claim = sum(1 for s in scores if s[0] < 1.0)
     return RagQualityResult(
         sample_count=len(samples),
         faithfulness_mean=round(faithfulness, 10),
         answer_relevancy_mean=round(relevancy, 10),
+        response_hallucination_rate=round(with_unsupported_claim / len(scores), 10),
     )

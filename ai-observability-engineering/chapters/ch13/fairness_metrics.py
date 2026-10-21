@@ -172,6 +172,10 @@ def publish_fairness(
     for group in groups:
         recorder.set("aiobs_fairness_sample_size", float(group.n), group=group.group)
 
+    for key in list(recorder.samples):
+        if key[0] == "aiobs_fairness_base_rate":
+            del recorder.samples[key]
+
     positive_rates = {}
     base_rates = {}
     for group in measurable:

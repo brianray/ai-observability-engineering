@@ -35,7 +35,7 @@ from dataclasses import dataclass
 
 #: Below this, rates are withheld. 50 is a defensible floor for the
 #: book's example, not a regulatory threshold. Yours comes from your own
-#: disclosure-control review; see the SME REVIEW box in Section 13.4.
+#: disclosure-control review; see Section 13.4.
 DEFAULT_MIN_N = 50
 
 #: The five gauges this chapter publishes, with their label sets.

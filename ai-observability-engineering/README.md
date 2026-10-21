@@ -635,7 +635,7 @@ Each chapter cites the module that implements its listings.
 | 2 | `chapters/ch02_anatomy.py` | `Layer`, `observe`, `CostLedger` |
 | 3 | `chapters/ch03_signals.py` | `Scope`, `GenAI.CONVERSATION_ID` |
 | 4 | `chapters/ch04_instrumentation.py` | `llm_span`, `Operation.EXECUTE_TOOL` |
-| 5 | `chapters/ch05_performance.py`, `chapters/ch05/` | percentiles, thread-pool context propagation, cross-service tracing |
+| 5 | `chapters/ch05_performance.py`, `chapters/ch05/`, `config/otel-collector-minimal.yaml` | SDK bootstrap (Listing 5.1), minimal collector config (Listing 5.2), percentiles, thread-pool context propagation, cross-service tracing |
 | 6 | `chapters/ch06_drift.py`, `chapters/ch06/` | `drift.population_stability_index`, `drift.kolmogorov_smirnov`, `drift.embedding_drift_score`, `drift.top_drifting_items`, tiered alerting |
 | 7 | `chapters/ch07_cost_accounting.py` | `CostLedger`, `price_call`, `UnknownModelError` |
 | 8 | `chapters/ch08_cost_engineering.py`, `chapters/ch08/` | routing, cache accounting, fully loaded cost, and the monthly panel query in `chapters/ch08/dashboard_queries.promql` (updates once per day to avoid paging), coding-agent fleet join in `chapters/ch08/coding_agent_fleet.py` (Listing 8.5) |
@@ -646,7 +646,7 @@ Each chapter cites the module that implements its listings.
 | 13 | `chapters/ch13_fairness.py`, `chapters/ch13/` | cohort quality parity, RAG-quality eval, decision-only judge in a confidence cascade (`evals.CascadeEvaluator`, `evals.MockDecisionJudge`, `evals.confidence_score`) |
 | 14 | `chapters/ch14_human_oversight.py`, `chapters/ch14/` | `Aiobs.HUMAN_REVIEW_OUTCOME`, HITL router with sampled audit, feedback capture, `chapters/ch14/hitl_dashboard.promql` |
 | 15 | `chapters/ch15_agent_tracing.py`, `chapters/ch15/` | `AgentRun`, handoff depth, handoff logging, health map (Graphviz + HTML), optional langgraph graph |
-| 16 | `chapters/ch16_agent_cost.py`, `chapters/ch16/` | `agents.classify`, `agents.failure_vector`, observable tool wrapper, loop-signature breaker, context and memory metrics |
+| 16 | `chapters/ch16_agent_cost.py`, `chapters/ch16/` | `agents.classify`, `agents.failure_vector`, observable tool wrapper, loop-signature breaker, context and memory metrics, verified code-generation wrapper (Listing 16.4, needs the `metrics` extra) |
 | 17 | `chapters/ch17_accountability.py`, `chapters/ch17/` | delegation chain attributes, responsibility chain, governance checkpoint, decision record |
 
 Cite it in the manuscript like this:

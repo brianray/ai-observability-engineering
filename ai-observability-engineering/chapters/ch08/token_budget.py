@@ -1,4 +1,4 @@
-"""Token budget controls for context assembly (Listing 8.2 companion)."""
+"""Token budget controls for context assembly (Listing 8.1 companion)."""
 
 from __future__ import annotations
 

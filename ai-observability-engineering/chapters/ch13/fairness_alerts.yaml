@@ -14,8 +14,7 @@
 #    was silently failing.
 #
 # Thresholds here are the book's illustrative values. Setting them for
-# real is a governance decision, not an engineering one; see the SME
-# REVIEW box in Section 13.4.
+# real is a governance decision, not an engineering one; see Section 13.4.
 
 groups:
   - name: fairness

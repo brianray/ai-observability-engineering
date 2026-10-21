@@ -145,9 +145,9 @@ class FairnessReport:
     positive_rates: Mapping[str, float]
     base_rates: Mapping[str, float]
     parity_gap: float
-    equalized_odds_gap: float
-    tpr_gap: float
-    fpr_gap: float
+    equalized_odds_gap: float | None
+    tpr_gap: float | None
+    fpr_gap: float | None
 
 
 def _spread(values: list[float]) -> float:
@@ -160,7 +160,7 @@ def publish_fairness(
     *,
     min_n: int = DEFAULT_MIN_N,
 ) -> tuple[FairnessReport, GaugeRecorder]:
-    """Compute and publish the five gauges."""
+    """Compute and publish available fairness gauges."""
     recorder = recorder or GaugeRecorder()
 
     measurable = [g for g in groups if g.n >= min_n]
@@ -173,7 +173,10 @@ def publish_fairness(
         recorder.set("aiobs_fairness_sample_size", float(group.n), group=group.group)
 
     for key in list(recorder.samples):
-        if key[0] == "aiobs_fairness_base_rate":
+        if key[0] in {
+            "aiobs_fairness_base_rate",
+            "aiobs_fairness_equalized_odds_gap",
+        }:
             del recorder.samples[key]
 
     positive_rates = {}
@@ -203,14 +206,17 @@ def publish_fairness(
             fprs.append(group.false_positive_rate)
         else:
             suppressed_rates.append((group.group, "false_positive_rate"))
-    tpr_gap = _spread(tprs)
-    fpr_gap = _spread(fprs)
+    tpr_gap = _spread(tprs) if len(tprs) >= 2 else None
+    fpr_gap = _spread(fprs) if len(fprs) >= 2 else None
     # Equalized odds is violated by the worse of the two, not their mean:
     # averaging lets a large TPR gap hide behind a small FPR gap.
-    equalized_odds_gap = max(tpr_gap, fpr_gap)
+    equalized_odds_gap = (
+        max(tpr_gap, fpr_gap) if tpr_gap is not None and fpr_gap is not None else None
+    )
 
     recorder.set("aiobs_fairness_parity_gap", parity_gap)
-    recorder.set("aiobs_fairness_equalized_odds_gap", equalized_odds_gap)
+    if equalized_odds_gap is not None:
+        recorder.set("aiobs_fairness_equalized_odds_gap", equalized_odds_gap)
 
     return (
         FairnessReport(

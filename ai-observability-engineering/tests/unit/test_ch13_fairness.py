@@ -166,6 +166,51 @@ def test_the_floor_applies_to_each_rates_own_denominator(four_groups):
     assert report.tpr_gap == pytest.approx(baseline.tpr_gap)
 
 
+def test_equalized_odds_gap_is_withheld_without_two_groups_per_rate():
+    groups = [
+        GroupOutcomes("group_a", true_positives=20, false_positives=20,
+                      true_negatives=20, false_negatives=20),
+        GroupOutcomes("group_b", true_positives=30, false_positives=10,
+                      true_negatives=30, false_negatives=10),
+    ]
+    report, recorder = publish_fairness(groups)
+
+    assert report.tpr_gap is None
+    assert report.fpr_gap is None
+    assert report.equalized_odds_gap is None
+    assert recorder.get("aiobs_fairness_equalized_odds_gap") is None
+
+
+def test_equalized_odds_gap_is_withheld_if_either_rate_lacks_coverage():
+    groups = [
+        GroupOutcomes("group_a", true_positives=20, false_positives=30,
+                      true_negatives=30, false_negatives=20),
+        GroupOutcomes("group_b", true_positives=10, false_positives=20,
+                      true_negatives=40, false_negatives=30),
+    ]
+    report, recorder = publish_fairness(groups)
+
+    assert report.tpr_gap is None
+    assert report.fpr_gap is not None
+    assert report.equalized_odds_gap is None
+    assert recorder.get("aiobs_fairness_equalized_odds_gap") is None
+
+
+def test_equalized_odds_gap_is_removed_from_a_reused_recorder(four_groups):
+    _, recorder = publish_fairness(four_groups)
+    groups = [
+        GroupOutcomes("group_a", true_positives=20, false_positives=20,
+                      true_negatives=20, false_negatives=20),
+        GroupOutcomes("group_b", true_positives=30, false_positives=10,
+                      true_negatives=30, false_negatives=10),
+    ]
+
+    report, recorder = publish_fairness(groups, recorder)
+
+    assert report.equalized_odds_gap is None
+    assert recorder.get("aiobs_fairness_equalized_odds_gap") is None
+
+
 def test_min_n_is_configurable(four_groups):
     report, recorder = publish_fairness(four_groups, min_n=5)
     assert report.suppressed_groups == ()
@@ -189,15 +234,20 @@ def test_fairness_alerts_are_structurally_valid():
 
 def test_alerts_cover_both_gaps_and_the_metric_going_absent():
     doc = check_rule_document(ALERTS_PATH)
-    alerts = {r["alert"] for g in doc["groups"] for r in g["rules"] if "alert" in r}
+    rules = {r["alert"]: r for g in doc["groups"] for r in g["rules"] if "alert" in r}
+    alerts = set(rules)
     assert "DemographicParityGapHigh" in alerts
     assert "EqualizedOddsGapHigh" in alerts
     # A parity gap that opened because the population moved is not a model
     # regression; the base-rate alert is what lets the pager tell them apart.
     assert "BaseRateShift" in alerts
+    assert "EqualizedOddsMetricsAbsent" in alerts
     # A fairness metric that stops being published looks exactly like a
     # fairness problem that resolved itself.
     assert "FairnessMetricsAbsent" in alerts
+    assert rules["EqualizedOddsMetricsAbsent"]["expr"] == (
+        "absent(aiobs_fairness_equalized_odds_gap)"
+    )
 
 
 def test_alert_expressions_reference_gauges_this_chapter_publishes():
